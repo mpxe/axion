@@ -1,0 +1,19 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>qtquickcontrols2.conf</file>
+        <file>Members.qml</file>
+        <file>Room.qml</file>
+        <file>RoomList.qml</file>
+        <file>MainWindow.qml</file>
+        <file>Login.qml</file>
+    </qresource>
+    <qresource prefix="/img">
+        <file>res/img/icon.png</file>
+        <file>res/img/icon2.png</file>
+        <file>res/img/krauss.png</file>
+        <file>res/img/miku.png</file>
+        <file>res/img/smolin.png</file>
+        <file>res/img/yuzuru.png</file>
+    </qresource>
+</RCC>
