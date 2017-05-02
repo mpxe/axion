@@ -5,7 +5,7 @@ import QtQuick.Layouts 1.3
 
 ApplicationWindow {
   visible: true
-  width: 640
+  width: 840
   height: 760
   title: qsTr("Axion")
 

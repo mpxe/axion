@@ -10,7 +10,6 @@
     </qresource>
     <qresource prefix="/img">
         <file>res/img/icon.png</file>
-        <file>res/img/icon2.png</file>
         <file>res/img/krauss.png</file>
         <file>res/img/miku.png</file>
         <file>res/img/smolin.png</file>
