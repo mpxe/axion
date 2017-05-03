@@ -14,7 +14,12 @@ Page {
 
   onSuccessChanged: {
     if (success)
-      loginPage.StackView.view.replace(Qt.resolvedUrl("qrc:/MainWindow.qml"))
+      loginPage.StackView.view.replace(Qt.resolvedUrl("qrc:/Room.qml"))
+  }
+
+  Rectangle {
+    anchors.fill: parent
+    color: "#2E2F30"
   }
 
   Image {
@@ -52,7 +57,6 @@ Page {
 
       TextField {
         id: userField
-        color: "white"
         anchors.verticalCenter: parent.verticalCenter
         width: 300
         placeholderText: qsTr("User")
@@ -65,7 +69,6 @@ Page {
 
       TextField {
         id: passwordField
-        color: "white"
         anchors.verticalCenter: parent.verticalCenter
         width: 300
         placeholderText: qsTr("Password")
@@ -95,6 +98,8 @@ Page {
         anchors.verticalCenter: parent.verticalCenter
         text: qsTr("Login")
         Material.background: Material.LightBlue
+        highlighted: true
+        Universal.accent: Universal.Cyan
         enabled: userField.text !== "" && passwordField.text !== ""
         onClicked: {
           serverBox.currentIndex === 0 ? matrix.login(userField.text, passwordField.text) :

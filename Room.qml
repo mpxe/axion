@@ -73,6 +73,7 @@ Page {
         TextArea {
           id: messageField
           Layout.fillWidth: true
+          Layout.rightMargin: 6
           placeholderText: "Say something"
           wrapMode: TextArea.Wrap
         }

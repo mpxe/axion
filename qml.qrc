@@ -5,10 +5,19 @@
         <file>Members.qml</file>
         <file>Room.qml</file>
         <file>RoomList.qml</file>
-        <file>MainWindow.qml</file>
         <file>Login.qml</file>
+        <file>Settings.qml</file>
+        <file>Options.qml</file>
     </qresource>
     <qresource prefix="/img">
+        <file>res/img/tool_icons/hashtag.png</file>
+        <file>res/img/tool_icons/arrow-left.png</file>
+        <file>res/img/tool_icons/wrench.png</file>
+        <file>res/img/tool_icons/cog.png</file>
+        <file>res/img/tool_icons/search.png</file>
+        <file>res/img/tool_icons/envelope.png</file>
+        <file>res/img/tool_icons/user.png</file>
+        <file>res/img/tool_icons/user-plus.png</file>
         <file>res/img/icon.png</file>
         <file>res/img/krauss.png</file>
         <file>res/img/miku.png</file>
