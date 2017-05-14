@@ -1,13 +1,15 @@
-QT += qml quick
-QT += quickcontrols2
-QT += sql
+QT += qml quick quickcontrols2
 
-CONFIG += c++14
+CONFIG += c++1z
 
 SOURCES += main.cpp \
-    membersmodel.cpp \
-    matrixaccessmanager.cpp \
-    roommodel.cpp
+    matrix/accessmanager.cpp \
+    matrix/client.cpp \
+    matrix/room.cpp \
+    matrix/user.cpp \
+    models/memberlistmodel.cpp \
+    models/roomlistmodel.cpp \
+    models/roommodel.cpp
 
 RESOURCES += qml.qrc
 
@@ -35,6 +37,11 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     ext/json.hpp \
-    membersmodel.h \
-    matrixaccessmanager.h \
-    roommodel.h
+    matrix/accessmanager.h \
+    matrix/client.h \
+    matrix/message.h \
+    matrix/room.h \
+    matrix/user.h \
+    models/memberlistmodel.h \
+    models/roomlistmodel.h \
+    models/roommodel.h

@@ -1,4 +1,4 @@
-#include "matrixaccessmanager.h"
+#include "accessmanager.h"
 
 
 #include <iostream>
@@ -12,23 +12,23 @@ using json = nlohmann::json;
 using error_signal = void(QNetworkReply::*)(QNetworkReply::NetworkError);
 
 
-matrix::MatrixAccessManager::MatrixAccessManager() : network_{new QNetworkAccessManager{this}}
+matrix::AccessManager::AccessManager() : network_{new QNetworkAccessManager{this}}
 {
   // Establish connection to reduce latency of first http request
-  network_->connectToHostEncrypted("https://matrix.org");
+  network_->connectToHost("https://matrix.org");
 
   connect(network_, &QNetworkAccessManager::finished, this, [this](auto* r){ r->deleteLater(); });
 }
 
 
-matrix::MatrixAccessManager::~MatrixAccessManager()
+matrix::AccessManager::~AccessManager()
 {
   if (!access_token_.isEmpty())
     logout();
 }
 
 
-void matrix::MatrixAccessManager::login(const QString& id, const QString& pw)
+void matrix::AccessManager::login(const QString& id, const QString& pw)
 {
   QNetworkRequest request{QUrl{"https://matrix.org/_matrix/client/r0/login"}};
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -44,7 +44,7 @@ void matrix::MatrixAccessManager::login(const QString& id, const QString& pw)
 }
 
 
-void matrix::MatrixAccessManager::logout()
+void matrix::AccessManager::logout()
 {
   QNetworkRequest request{QUrl{"https://matrix.org/_matrix/client/r0/logout"}};
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -52,7 +52,7 @@ void matrix::MatrixAccessManager::logout()
 }
 
 
-void matrix::MatrixAccessManager::handle_login(QNetworkReply* reply)
+void matrix::AccessManager::handle_login(QNetworkReply* reply)
 {
   auto status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
   auto response = static_cast<LoginResponse>(status_code);
@@ -89,7 +89,7 @@ void matrix::MatrixAccessManager::handle_login(QNetworkReply* reply)
 }
 
 
-void matrix::MatrixAccessManager::sync()
+void matrix::AccessManager::sync()
 {
   auto url = QString{"https://matrix.org/_matrix/client/r0/sync?access_token=%1"}.arg(access_token_);
   QNetworkRequest request{QUrl{url}};
@@ -99,7 +99,7 @@ void matrix::MatrixAccessManager::sync()
 }
 
 
-void matrix::MatrixAccessManager::handle_sync(QNetworkReply* reply)
+void matrix::AccessManager::handle_sync(QNetworkReply* reply)
 {
   auto status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
   if (status_code != 200 || !reply->bytesAvailable())
@@ -111,7 +111,7 @@ void matrix::MatrixAccessManager::handle_sync(QNetworkReply* reply)
 }
 
 
-void matrix::MatrixAccessManager::send(const QString& room, const QString& message)
+void matrix::AccessManager::send(const QString& room, const QString& message)
 {
   auto url = QString{"https://matrix.org/_matrix/client/r0/rooms/%1/send/m.room.message?access_token=%2"}
       .arg(room_ids_[room], access_token_);

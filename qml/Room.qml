@@ -4,8 +4,6 @@ import QtQuick.Controls.Material 2.1
 import QtQuick.Controls.Universal 2.1
 import QtQuick.Layouts 1.3
 
-import im.axion 1.0
-
 
 Page {
   ColumnLayout {
@@ -22,12 +20,10 @@ Page {
       displayMarginEnd: 48
       verticalLayoutDirection: ListView.BottomToTop
       spacing: 12
-      model: RoomModel {
-        room: "!Xq3620DUiqCaoxq:example.com"
-      }
+      model: roomModel
 
       delegate: Row {
-        readonly property bool sentByMe: model.user_id === "@self:example.com"
+        readonly property bool sentByMe: account_name === "self"
         id: messageRow
         anchors.right: sentByMe ? parent.right : undefined
         spacing: 6
@@ -36,27 +32,27 @@ Page {
           id: userImage
           width: 64
           height: 64
-          source: !sentByMe ? "qrc:/img/res/img/miku.png" : ""
+          source: !sentByMe ? "qrc:/img/res/img/" + account_name + ".png" : ""
         }
 
         Rectangle {
           width: Math.min(messageText.implicitWidth + 16,
                  chatView.width - (!sentByMe ? userImage.width + messageRow.spacing : 0))
           height: messageText.implicitHeight + 16
-          color: sentByMe ? "lightgrey" : "steelblue"
+          color: sentByMe ? transmit_confirmed ? "teal" : "grey" : "steelblue"
 
           Label {
             id: messageText
             renderType: Text.NativeRendering
             anchors.fill: parent
             anchors.margins: 8
-            text: model.message
+            text: message_text
             font.family: "Segoe UI"
             font.bold: false
             font.italic: false
-            font.pixelSize: 14
+            font.pixelSize: 18
             wrapMode: Label.Wrap
-            color: sentByMe ? "black" : "white"
+            color: "white"
           }
         }
       }
@@ -84,7 +80,7 @@ Page {
           Universal.background: Material.LightBlue
           enabled: messageField.length > 0
           onClicked: {
-            chatView.model.sendMessage(messageField.text);
+            chatView.model.add_message(messageField.text);
             messageField.text = "";
           }
         }

@@ -1,15 +1,17 @@
 <RCC>
     <qresource prefix="/">
-        <file>main.qml</file>
+        <file>qml/Login.qml</file>
+        <file>qml/main.qml</file>
+        <file>qml/Members.qml</file>
+        <file>qml/MenuBarButton.qml</file>
+        <file>qml/Options.qml</file>
+        <file>qml/Room.qml</file>
+        <file>qml/RoomList.qml</file>
+        <file>qml/Settings.qml</file>
         <file>qtquickcontrols2.conf</file>
-        <file>Members.qml</file>
-        <file>Room.qml</file>
-        <file>RoomList.qml</file>
-        <file>Login.qml</file>
-        <file>Settings.qml</file>
-        <file>Options.qml</file>
     </qresource>
     <qresource prefix="/img">
+        <file>res/img/tool_icons/th-list.png</file>
         <file>res/img/tool_icons/hashtag.png</file>
         <file>res/img/tool_icons/arrow-left.png</file>
         <file>res/img/tool_icons/wrench.png</file>
@@ -19,6 +21,7 @@
         <file>res/img/tool_icons/user.png</file>
         <file>res/img/tool_icons/user-plus.png</file>
         <file>res/img/icon.png</file>
+        <file>res/img/self.png</file>
         <file>res/img/krauss.png</file>
         <file>res/img/miku.png</file>
         <file>res/img/smolin.png</file>

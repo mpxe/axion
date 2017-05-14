@@ -10,7 +10,7 @@
 class QNetworkAccessManager;
 class QNetworkReply;
 
-#include "ext/json.hpp"
+#include "../ext/json.hpp"
 
 
 namespace matrix
@@ -44,13 +44,13 @@ template<typename T> inline T get(nlohmann::json j, const std::string& key, T&& 
 }
 
 
-class MatrixAccessManager : public QObject
+class AccessManager : public QObject
 {
   Q_OBJECT
 
 public:
-  MatrixAccessManager();
-  ~MatrixAccessManager();
+  AccessManager();
+  ~AccessManager();
 
 signals:
   void login_success();
