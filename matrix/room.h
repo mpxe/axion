@@ -25,8 +25,8 @@ public:
   std::string main_address() const { return main_address_; }
   std::string name() const;
 
-  std::size_t message_count() { return messages_.size(); }
-  std::size_t member_count() { return members_.size(); }
+  std::size_t message_count() const { return messages_.size(); }
+  std::size_t member_count() const { return members_.size(); }
 
   Message* message(std::size_t i) { return i < message_count() ? &messages_[i] : nullptr; }
   User* member(std::size_t i) { return i < member_count() ? &members_[i] : nullptr; }
