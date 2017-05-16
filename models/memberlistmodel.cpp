@@ -23,6 +23,7 @@ QVariant MemberListModel::data(const QModelIndex& index, int role) const
 
   if (auto* user = room_->member(index.row()); user) {
     switch (static_cast<MemberRole>(role)) {
+      case MemberRole::UserId: return QString::fromUtf8(user->id().c_str());
       case MemberRole::AccountName: return QString::fromUtf8(user->account_name().c_str());
       case MemberRole::DisplayName: return QString::fromUtf8(user->display_name().c_str());
     }
@@ -35,6 +36,7 @@ QVariant MemberListModel::data(const QModelIndex& index, int role) const
 QHash<int, QByteArray> MemberListModel::roleNames() const
 {
   QHash<int, QByteArray> names;
+  names[static_cast<int>(MemberRole::UserId)] = "user_id";
   names[static_cast<int>(MemberRole::AccountName)] = "account_name";
   names[static_cast<int>(MemberRole::DisplayName)] = "display_name";
 

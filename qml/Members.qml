@@ -14,12 +14,14 @@ Page {
     model: memberListModel
 
     delegate: Item {
+      readonly property bool myself: account_name === "self"
+
       width: parent.width
       height: 64
 
       Row {
         anchors.left: parent.left
-        spacing: 6
+        spacing: 12
 
         Image {
           id: userImage
@@ -28,13 +30,34 @@ Page {
           source: "qrc:/img/res/img/" + account_name + ".png"
         }
 
-        Label {
-          text: display_name
-          font.family: "Segoe UI"
-          font.bold: false
-          font.italic: false
-          font.pixelSize: 18
+        Rectangle {
+          width: memberView.width / 2
           height: userImage.height
+          color: myself ? "steelblue" : "grey"
+
+          Column {
+            anchors.fill: parent
+            anchors.margins: 4
+            anchors.leftMargin: 8
+
+            Label {
+              text: display_name
+              renderType: Text.NativeRendering
+              font.family: "Segoe UI"
+              font.bold: false
+              font.italic: false
+              font.pixelSize: 24
+            }
+
+            Label {
+              text: user_id
+              renderType: Text.NativeRendering
+              font.family: "Segoe UI"
+              font.bold: false
+              font.italic: false
+              font.pixelSize: 16
+            }
+          }
         }
       }
 

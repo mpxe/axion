@@ -26,7 +26,7 @@ Page {
         readonly property bool sentByMe: account_name === "self"
         id: messageRow
         anchors.right: sentByMe ? parent.right : undefined
-        spacing: 6
+        spacing: 12
 
         Image {
           id: userImage
