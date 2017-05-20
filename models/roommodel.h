@@ -8,7 +8,9 @@
 #include <QHash>
 #include <QByteArray>
 
-#include "../matrix/client.h"
+#include "matrix/room.h"
+#include "matrix/message.h"
+namespace matrix { class Client; }
 
 
 class RoomModel : public QAbstractListModel
@@ -23,7 +25,7 @@ public:
     AccountName = Qt::UserRole, DisplayName, MessageText, Timestamp, TransmitConfirmed
   };
 
-  RoomModel(matrix::Client& client, QObject* parent = nullptr);
+  RoomModel(matrix::Client* client, QObject* parent = nullptr);
 
   int rowCount(const QModelIndex& parent = QModelIndex{}) const override;
   QVariant data(const QModelIndex& index, int role) const override;
@@ -32,14 +34,16 @@ public:
   QString room_id() const { return room_ ? room_->id().c_str() : QString{}; }
   QString room_name() const { return room_ ? room_->name().c_str() : QString{}; }
   void set_room(const QString& id);
+  const matrix::Room* current_room() const { return room_; }
 
   Q_INVOKABLE void add_message(const QString& message);
+  void add_message(matrix::Message&& message);
 
 signals:
   void room_changed();
 
 private:
-  matrix::Client& client_;
+  matrix::Client* client_;
   matrix::Room* room_ = nullptr;
 };
 

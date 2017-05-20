@@ -1,7 +1,11 @@
 #include "memberlistmodel.h"
 
 
-MemberListModel::MemberListModel(matrix::Client& client, QObject* parent)
+#include "matrix/client.h"
+#include "matrix/room.h"
+
+
+MemberListModel::MemberListModel(matrix::Client* client, QObject* parent)
     : QAbstractListModel{parent}, client_{client}
 {
 }
@@ -44,12 +48,18 @@ QHash<int, QByteArray> MemberListModel::roleNames() const
 }
 
 
+QString MemberListModel::room_id() const
+{
+  return room_ ? room_->id().c_str() : QString{};
+}
+
+
 void MemberListModel::set_room(const QString& id)
 {
   if (auto room_id = id.toStdString(); !room_ || room_->id() != room_id)
   {
     beginResetModel();
-    room_ = client_.room(room_id);
+    room_ = client_->room(room_id);
     endResetModel();
     emit room_changed();
   }

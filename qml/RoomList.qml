@@ -14,20 +14,44 @@ Page {
     rightMargin: 12
     spacing: 12
     model: roomListModel
+
     delegate: Item {
-      width: parent.width
-      height: 48
+      width: roomListView.width
+      height: 64
 
       Row {
+        width: parent.width
         anchors.left: parent.left
-        spacing: 6
+        spacing: 12
 
-        Label {
-          text: room_name
-          font.family: "Segoe UI"
-          font.bold: false
-          font.italic: false
-          font.pixelSize: 18
+        Rectangle {
+          width: parent.width - 24
+          height: 64
+          color: "grey"
+
+          Column {
+            anchors.left: parent.left
+            anchors.margins: 4
+            anchors.leftMargin: 8
+
+            Label {
+              text: room_name
+              renderType: Text.NativeRendering
+              font.family: "Segoe UI"
+              font.bold: false
+              font.italic: false
+              font.pixelSize: 24
+            }
+
+            Label {
+              text: main_address
+              renderType: Text.NativeRendering
+              font.family: "Segoe UI"
+              font.bold: false
+              font.italic: false
+              font.pixelSize: 16
+            }
+          }
         }
       }
 
@@ -36,6 +60,7 @@ Page {
         onClicked: {
           roomModel.room = room_id
           memberListModel.room = room_id
+          menuBar.room_name = room_name
           menuBar.state = "room"
           roomListPage.StackView.view.pop();
         }

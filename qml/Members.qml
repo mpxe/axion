@@ -31,7 +31,7 @@ Page {
         }
 
         Rectangle {
-          width: memberView.width / 2
+          width: memberView.width - 36 - userImage.width
           height: userImage.height
           color: myself ? "steelblue" : "grey"
 

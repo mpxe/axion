@@ -7,7 +7,7 @@
 #include <QHash>
 #include <QByteArray>
 
-#include "../matrix/client.h"
+namespace matrix { class Client; class Room; }
 
 
 class MemberListModel : public QAbstractListModel
@@ -19,20 +19,20 @@ class MemberListModel : public QAbstractListModel
 public:
   enum class MemberRole { UserId = Qt::UserRole, AccountName, DisplayName };
 
-  MemberListModel(matrix::Client& client, QObject* parent = nullptr);
+  MemberListModel(matrix::Client* client, QObject* parent = nullptr);
 
   int rowCount(const QModelIndex& parent = QModelIndex{}) const override;
   QVariant data(const QModelIndex& index, int role) const override;
   QHash<int, QByteArray> roleNames() const override;
 
-  QString room_id() const { return room_ ? room_->id().c_str() : QString{}; }
+  QString room_id() const;
   void set_room(const QString& id);
 
 signals:
   void room_changed();
 
 private:
-  matrix::Client& client_;
+  matrix::Client* client_;
   matrix::Room* room_ = nullptr;
 };
 

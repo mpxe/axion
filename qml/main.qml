@@ -14,6 +14,7 @@ ApplicationWindow {
   header: ToolBar {
     id: menuBar
     property string prevState: "login"
+    property string room_name: ""
     state: "login"
     height: 64
     background: Rectangle {
@@ -162,7 +163,7 @@ ApplicationWindow {
       },
       State {
         name: "members";
-        PropertyChanges { target: titleLabel; text: "Members of " + roomModel.room_name }
+        PropertyChanges { target: titleLabel; text: "Members of " + menuBar.room_name }
         PropertyChanges { target: roomListButton; visible: false }
         PropertyChanges { target: backButton; visible: true }
         PropertyChanges { target: searchButton; visible: true }
@@ -174,7 +175,7 @@ ApplicationWindow {
       },
       State {
         name: "settings";
-        PropertyChanges { target: titleLabel; text: "Settings of " + roomModel.room_name }
+        PropertyChanges { target: titleLabel; text: "Settings of " + menuBar.room_name }
         PropertyChanges { target: roomListButton; visible: false }
         PropertyChanges { target: backButton; visible: true }
         PropertyChanges { target: searchButton; visible: false }
@@ -186,7 +187,7 @@ ApplicationWindow {
       },
       State {
         name: "room";
-        PropertyChanges { target: titleLabel; text: roomModel.room_name }
+        PropertyChanges { target: titleLabel; text: menuBar.room_name }
         PropertyChanges { target: roomListButton; visible: true }
         PropertyChanges { target: backButton; visible: false }
         PropertyChanges { target: searchButton; visible: true }

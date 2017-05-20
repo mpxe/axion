@@ -56,8 +56,8 @@ void add_dummy_content(matrix::Client& client)
   message.text = "If you have nothing in quantum mechanics, you will always have something.";
   physics.add_message(matrix::Message{message});
 
-  client.add(std::move(music));
-  client.add(std::move(physics));
+  client.add_room(std::move(music));
+  client.add_room(std::move(physics));
 }
 
 
@@ -72,15 +72,17 @@ int main(int argc, char *argv[])
   QGuiApplication app(argc, argv);
   app.setWindowIcon(QIcon{"qrc:/img/res/img/icon.png"});
 
-  matrix::AccessManager matrix;
   matrix::Client client{};
   add_dummy_content(client);
 
-  RoomModel room_model{client};
-  RoomListModel room_list_model{client};
-  MemberListModel member_list_model{client};
+  RoomModel room_model{&client};
+  RoomListModel room_list_model{&client};
+  MemberListModel member_list_model{&client};
   room_model.set_room("!636q39766251:example.com");
   member_list_model.set_room("!636q39766251:example.com");
+
+  matrix::AccessManager matrix{"http://matrix.org", &client, &room_model,
+      &room_list_model, &member_list_model};
 
   QQmlApplicationEngine engine;
   engine.load(QUrl(QLatin1String("qrc:/qml/main.qml")));

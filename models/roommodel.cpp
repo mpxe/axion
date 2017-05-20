@@ -1,7 +1,10 @@
 #include "roommodel.h"
 
 
-RoomModel::RoomModel(matrix::Client& client, QObject* parent)
+#include "matrix/client.h"
+
+
+RoomModel::RoomModel(matrix::Client* client, QObject* parent)
     : QAbstractListModel{parent}, client_{client}
 {
 }
@@ -60,7 +63,7 @@ void RoomModel::set_room(const QString& id)
   if (auto room_id = id.toStdString(); !room_ || room_->id() != room_id)
   {
     beginResetModel();
-    room_ = client_.room(room_id);
+    room_ = client_->room(room_id);
     endResetModel();
     emit room_changed();
   }
@@ -70,12 +73,17 @@ void RoomModel::set_room(const QString& id)
 void RoomModel::add_message(const QString& text)
 {
   matrix::Message message;
-  message.room_id = room_id().toStdString();
-  message.user_id = "@self:example.com";
+  message.room_id = room_->id();
+  message.user_id = client_->user_id();
   message.text = text.toStdString();
   message.transmit_confirmed = false;
+  add_message(std::move(message));
+}
 
+
+void RoomModel::add_message(matrix::Message&& message)
+{
   beginInsertRows(QModelIndex{}, 0, 0);
-  client_.add(std::move(message));
+  client_->add_message(std::move(message));
   endInsertRows();
 }

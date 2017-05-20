@@ -21,8 +21,8 @@ public:
   Room() = default;
   Room(const std::string& id, const std::string& address) : id_{id}, main_address_{address} {}
 
-  std::string id() const { return id_; }
-  std::string main_address() const { return main_address_; }
+  const std::string& id() const { return id_; }
+  const std::string& main_address() const { return main_address_; }
   std::string name() const;
 
   std::size_t message_count() const { return messages_.size(); }

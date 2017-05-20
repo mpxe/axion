@@ -26,6 +26,7 @@ Page {
         readonly property bool sentByMe: account_name === "self"
         id: messageRow
         anchors.right: sentByMe ? parent.right : undefined
+        width: parent.width
         spacing: 12
 
         Image {
@@ -37,7 +38,7 @@ Page {
 
         Rectangle {
           width: Math.min(messageText.implicitWidth + 16,
-                 chatView.width - (!sentByMe ? userImage.width + messageRow.spacing : 0))
+                 parent.width - (!sentByMe ? userImage.width + 12 : 0))
           height: messageText.implicitHeight + 16
           color: sentByMe ? transmit_confirmed ? "teal" : "grey" : "steelblue"
 
@@ -81,6 +82,7 @@ Page {
           enabled: messageField.length > 0
           onClicked: {
             chatView.model.add_message(messageField.text);
+            matrix.send(roomModel.room, messageField.text);
             messageField.text = "";
           }
         }
