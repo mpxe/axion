@@ -9,7 +9,8 @@ SOURCES += main.cpp \
     matrix/user.cpp \
     models/memberlistmodel.cpp \
     models/roomlistmodel.cpp \
-    models/roommodel.cpp
+    models/roommodel.cpp \
+    ext/fmt/fmtlib.cpp
 
 RESOURCES += qml.qrc
 
@@ -46,4 +47,5 @@ HEADERS += \
     matrix/user.h \
     models/memberlistmodel.h \
     models/roomlistmodel.h \
-    models/roommodel.h
+    models/roommodel.h \
+    ext/fmt/fmtlib.h
