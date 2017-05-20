@@ -18,14 +18,14 @@ enum class MessageType
 
 struct Message
 {
+  bool transmit_confirmed = false;
+  bool redacted = false;
+  MessageType type;
+  std::uint64_t timestamp = 0;
   std::string event_id;
   std::string room_id;
   std::string user_id;
-  std::uint64_t timestamp = 0;
-  std::string type;
   std::string text;
-  bool transmit_confirmed = false;
-  bool redacted = false;
 };
 
 
