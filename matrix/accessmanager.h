@@ -2,6 +2,7 @@
 #define MATRIX_ACCESS_MANAGER_H
 
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
@@ -10,7 +11,12 @@
 class QNetworkAccessManager;
 class QNetworkReply;
 
-#include "../ext/json.hpp"
+#include "ext/json.hpp"
+
+namespace matrix { class Client; }
+class RoomModel;
+class RoomListModel;
+class MemberListModel;
 
 
 namespace matrix
@@ -26,30 +32,13 @@ enum class LoginResponse
 };
 
 
-template<typename T> inline T get(nlohmann::json j, const std::string& key, const T& def)
-{
-  if (j.count(key)) {
-    return j[key];
-  }
-  return def;
-}
-
-
-template<typename T> inline T get(nlohmann::json j, const std::string& key, T&& def)
-{
-  if (j.count(key)) {
-    return j[key];
-  }
-  return def;
-}
-
-
 class AccessManager : public QObject
 {
   Q_OBJECT
 
 public:
-  AccessManager();
+  AccessManager(std::string&& server, Client* client, RoomModel* room_model,
+      RoomListModel* room_list_model, MemberListModel* member_list_model);
   ~AccessManager();
 
 signals:
@@ -59,16 +48,31 @@ signals:
 public slots:
   void login(const QString& id, const QString& pw);
   void logout();
-  void sync();
-  void send(const QString& room, const QString& message);
+  void init_sync();
+  void long_sync();
+  void send(const QString& room_id, const QString& message);
 
 private:
+  inline QNetworkReply* post(std::string&& url);
+  inline QNetworkReply* post(std::string&& url, std::string&& data);
+  inline QNetworkReply* get(std::string&& url);
   void handle_sync(QNetworkReply* reply);
   void handle_login(QNetworkReply* reply);
+  void sync_rooms(nlohmann::json& rooms);
+
+  const std::string server_;
+  const std::string url_base_;
+  std::uint64_t transaction_id_ = 255;
+
+  std::string user_id_;
+  std::string access_token_;
+  std::string next_batch_;
 
   QNetworkAccessManager* network_;
-  QString access_token_;
-  QHash<QString, QString> room_ids_;
+  Client* client_;
+  RoomModel* room_model_;
+  RoomListModel* room_list_model_;
+  MemberListModel* member_list_model_;
 };
 
 
