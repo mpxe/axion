@@ -13,9 +13,9 @@ class User
 {
 public:
   User(std::string&& user_id, std::string&& display_name);
-  std::string id() const { return id_; }
-  std::string account_name() const { return account_name_; }
-  std::string display_name() const { return display_name_; }
+  const std::string& id() const { return id_; }
+  const std::string& account_name() const { return account_name_; }
+  const std::string& display_name() const { return display_name_; }
 
 private:
   std::string id_;
