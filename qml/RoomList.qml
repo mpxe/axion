@@ -44,12 +44,13 @@ Page {
             }
 
             Label {
-              text: main_address
+              text: room_id
               renderType: Text.NativeRendering
               font.family: "Segoe UI"
               font.bold: false
               font.italic: false
               font.pixelSize: 16
+              color: "lightgrey"
             }
           }
         }

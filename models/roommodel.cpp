@@ -26,6 +26,7 @@ QVariant RoomModel::data(const QModelIndex& index, int role) const
 
   if (auto* m = room_->message(index.row()); m) {
     switch (static_cast<RoomRole>(role)) {
+      case RoomRole::UserId: return QString::fromUtf8(m->user_id.c_str());
       case RoomRole::AccountName: {
         if (auto* user = room_->member(m->user_id); user)
           return QString::fromUtf8(user->account_name().c_str());
@@ -49,6 +50,7 @@ QVariant RoomModel::data(const QModelIndex& index, int role) const
 QHash<int, QByteArray> RoomModel::roleNames() const
 {
   QHash<int, QByteArray> names;
+  names[static_cast<int>(RoomRole::UserId)] = "user_id";
   names[static_cast<int>(RoomRole::AccountName)] = "account_name";
   names[static_cast<int>(RoomRole::DisplayName)] = "display_name";
   names[static_cast<int>(RoomRole::MessageText)] = "message_text";

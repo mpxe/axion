@@ -44,9 +44,10 @@ QHash<int, QByteArray> RoomListModel::roleNames() const
 }
 
 
-void RoomListModel::add_room(matrix::Room&& room)
+matrix::Room* RoomListModel::add_room(matrix::Room&& room)
 {
   beginInsertRows(QModelIndex{}, rowCount(), rowCount());
-  client_->add_room(std::move(room));
+  auto* r = client_->add_room(std::move(room));
   endInsertRows();
+  return r;
 }

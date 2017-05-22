@@ -24,7 +24,7 @@ public:
   QVariant data(const QModelIndex& index, int role) const override;
   QHash<int, QByteArray> roleNames() const override;
 
-  void add_room(matrix::Room&& room);
+  matrix::Room* add_room(matrix::Room&& room);
 
 private:
   matrix::Client* client_;

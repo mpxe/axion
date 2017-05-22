@@ -103,12 +103,6 @@ ApplicationWindow {
       }
 
       MenuBarButton {
-        id: notificationsButton
-        icon: "envelope"
-        onClicked: { }
-      }
-
-      MenuBarButton {
         id: settingsButton
         icon: "wrench"
         onClicked: {
@@ -126,12 +120,28 @@ ApplicationWindow {
       }
 
       MenuBarButton {
+        id: notificationsButton
+        icon: "envelope"
+        onClicked: { }
+      }
+
+      MenuBarButton {
         id: optionsButton
         icon: "cog"
         onClicked: {
           menuBar.prevState = menuBar.state
           menuBar.state = "options"
           mainView.push(Qt.resolvedUrl("qrc:/qml/Options.qml"))
+        }
+      }
+
+      MenuBarButton {
+        id: aboutButton
+        icon: "axion"
+        onClicked: {
+          menuBar.prevState = menuBar.state
+          menuBar.state = "about"
+          mainView.push(Qt.resolvedUrl("qrc:/qml/About.qml"))
         }
       }
     }
@@ -148,6 +158,7 @@ ApplicationWindow {
         PropertyChanges { target: notificationsButton; visible: false }
         PropertyChanges { target: settingsButton; visible: false }
         PropertyChanges { target: optionsButton; visible: true }
+        PropertyChanges { target: aboutButton; visible: true }
       },
       State {
         name: "options";
@@ -160,6 +171,20 @@ ApplicationWindow {
         PropertyChanges { target: notificationsButton; visible: false }
         PropertyChanges { target: settingsButton; visible: false }
         PropertyChanges { target: optionsButton; visible: false }
+        PropertyChanges { target: aboutButton; visible: false }
+      },
+      State {
+        name: "about";
+        PropertyChanges { target: titleLabel; text: "About" }
+        PropertyChanges { target: roomListButton; visible: false }
+        PropertyChanges { target: backButton; visible: true }
+        PropertyChanges { target: searchButton; visible: false }
+        PropertyChanges { target: membersButton; visible: false }
+        PropertyChanges { target: inviteButton; visible: false }
+        PropertyChanges { target: notificationsButton; visible: false }
+        PropertyChanges { target: settingsButton; visible: false }
+        PropertyChanges { target: optionsButton; visible: false }
+        PropertyChanges { target: aboutButton; visible: false }
       },
       State {
         name: "members";
@@ -172,6 +197,7 @@ ApplicationWindow {
         PropertyChanges { target: notificationsButton; visible: false }
         PropertyChanges { target: settingsButton; visible: false }
         PropertyChanges { target: optionsButton; visible: false }
+        PropertyChanges { target: aboutButton; visible: false }
       },
       State {
         name: "settings";
@@ -184,6 +210,7 @@ ApplicationWindow {
         PropertyChanges { target: notificationsButton; visible: false }
         PropertyChanges { target: settingsButton; visible: false }
         PropertyChanges { target: optionsButton; visible: false }
+        PropertyChanges { target: aboutButton; visible: false }
       },
       State {
         name: "room";
@@ -196,6 +223,7 @@ ApplicationWindow {
         PropertyChanges { target: notificationsButton; visible: true }
         PropertyChanges { target: settingsButton; visible: true }
         PropertyChanges { target: optionsButton; visible: true }
+        PropertyChanges { target: aboutButton; visible: true }
 
       },
       State {
@@ -209,7 +237,7 @@ ApplicationWindow {
         PropertyChanges { target: notificationsButton; visible: false }
         PropertyChanges { target: settingsButton; visible: false }
         PropertyChanges { target: optionsButton; visible: false }
-
+        PropertyChanges { target: aboutButton; visible: false }
       }
     ]
   }

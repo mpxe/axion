@@ -9,6 +9,7 @@
         <file>qml/RoomList.qml</file>
         <file>qml/Settings.qml</file>
         <file>qtquickcontrols2.conf</file>
+        <file>qml/About.qml</file>
     </qresource>
     <qresource prefix="/img">
         <file>res/img/tool_icons/th-list.png</file>
@@ -20,7 +21,9 @@
         <file>res/img/tool_icons/envelope.png</file>
         <file>res/img/tool_icons/user.png</file>
         <file>res/img/tool_icons/user-plus.png</file>
+        <file>res/img/tool_icons/axion.png</file>
         <file>res/img/icon.png</file>
+        <file>res/img/default_user.png</file>
         <file>res/img/self.png</file>
         <file>res/img/krauss.png</file>
         <file>res/img/miku.png</file>

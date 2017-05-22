@@ -23,22 +23,29 @@ Page {
       model: roomModel
 
       delegate: Row {
-        readonly property bool sentByMe: account_name === "self"
+        readonly property bool sentByMe: user_id === roomModel.user
+        readonly property bool dummyRoom: roomModel.room_name === "music" ||
+            roomModel.room_name === "physics"
+
         id: messageRow
         anchors.right: sentByMe ? parent.right : undefined
-        width: parent.width
+        //width: parent.width
         spacing: 12
 
         Image {
           id: userImage
           width: 64
           height: 64
-          source: !sentByMe ? "qrc:/img/res/img/" + account_name + ".png" : ""
+          smooth: true
+          asynchronous: true
+          source: !sentByMe ? dummyRoom ? "qrc:/img/res/img/" + account_name + ".png" :
+              "qrc:/img/res/img/default_user.png" : ""
+          visible: !sentByMe
         }
 
         Rectangle {
           width: Math.min(messageText.implicitWidth + 16,
-                 parent.width - (!sentByMe ? userImage.width + 12 : 0))
+                 chatView.width - (!sentByMe ? userImage.width + 12 : 0))
           height: messageText.implicitHeight + 16
           color: sentByMe ? transmit_confirmed ? "teal" : "grey" : "steelblue"
 
@@ -63,6 +70,12 @@ Page {
       id: inputPane
       Layout.fillWidth: true
 
+      function sendMessage() {
+        chatView.model.add_message(messageField.text);
+        matrix.send_message(roomModel.room, messageField.text);
+        messageField.text = "";
+      }
+
       RowLayout {
         width: parent.width
         spacing: 6
@@ -73,6 +86,12 @@ Page {
           Layout.rightMargin: 6
           placeholderText: "Say something"
           wrapMode: TextArea.Wrap
+          Keys.onPressed: {
+            if (event.key === Qt.Key_Return) {
+              inputPane.sendMessage();
+              event.accepted = true;
+            }
+          }
         }
         Button {
           id: sendButton
@@ -80,11 +99,7 @@ Page {
           Material.background: Material.LightBlue
           Universal.background: Material.LightBlue
           enabled: messageField.length > 0
-          onClicked: {
-            chatView.model.add_message(messageField.text);
-            matrix.send(roomModel.room, messageField.text);
-            messageField.text = "";
-          }
+          onClicked: { inputPane.sendMessage(); }
         }
       }
     }

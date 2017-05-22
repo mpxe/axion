@@ -8,9 +8,9 @@
 #include <QHash>
 #include <QByteArray>
 
+#include "matrix/client.h"
 #include "matrix/room.h"
 #include "matrix/message.h"
-namespace matrix { class Client; }
 
 
 class RoomModel : public QAbstractListModel
@@ -19,10 +19,11 @@ class RoomModel : public QAbstractListModel
 
   Q_PROPERTY(QString room READ room_id WRITE set_room NOTIFY room_changed)
   Q_PROPERTY(QString room_name READ room_name NOTIFY room_changed)
+  Q_PROPERTY(QString user READ user_id NOTIFY user_changed)
 
 public:
   enum class RoomRole {
-    AccountName = Qt::UserRole, DisplayName, MessageText, Timestamp, TransmitConfirmed
+    UserId = Qt::UserRole, AccountName, DisplayName, MessageText, Timestamp, TransmitConfirmed
   };
 
   RoomModel(matrix::Client* client, QObject* parent = nullptr);
@@ -31,6 +32,7 @@ public:
   QVariant data(const QModelIndex& index, int role) const override;
   QHash<int, QByteArray> roleNames() const override;
 
+  QString user_id() const { return client_ ? client_->user_id().c_str() : QString{}; }
   QString room_id() const { return room_ ? room_->id().c_str() : QString{}; }
   QString room_name() const { return room_ ? room_->name().c_str() : QString{}; }
   void set_room(const QString& id);
@@ -41,6 +43,7 @@ public:
 
 signals:
   void room_changed();
+  void user_changed();
 
 private:
   matrix::Client* client_;
