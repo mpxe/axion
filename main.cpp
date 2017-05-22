@@ -19,20 +19,23 @@ namespace
 
 void add_dummy_content(matrix::Client& client)
 {
-  matrix::Room music{"!Xq3620DUiqCaoxq:example.com", "#music:example.com"};
-  matrix::Room physics{"!636q39766251:example.com", "#spacetime:example.com"};
+  client.add_self(matrix::User{"@self:example.com", u8"ಠ_ಠ"});
+  matrix::Room music{"!Xq3620DUiqCaoxq:example.com"};
+  matrix::Room physics{"!636q39766251:example.com"};
+  music.set_name("music");
+  physics.set_name("physics");
 
   matrix::User miku{"@miku:example.com", u8"初音ミク"};
   matrix::User yuzuru{"@yuzuru:example.com", "yuzuru"};
   matrix::User krauss{"@krauss:example.com", "Lawrence Krauss"};
   matrix::User smolin{"@smolin:example.com", "Lee Smolin"};
 
-  music.add_member(matrix::User{"@self:example.com", u8"ಠ_ಠ"});
-  music.add_member(matrix::User{miku});
-  music.add_member(matrix::User{yuzuru});
-  physics.add_member(matrix::User{"@self:example.com", u8"ಠ_ಠ"});
-  physics.add_member(matrix::User{krauss});
-  physics.add_member(matrix::User{smolin});
+  music.add_member(client.self());
+  music.add_member(client.add_user(matrix::User{miku}));
+  music.add_member(client.add_user(matrix::User{yuzuru}));
+  physics.add_member(client.self());
+  physics.add_member(client.add_user(matrix::User{krauss}));
+  physics.add_member(client.add_user(matrix::User{smolin}));
 
   matrix::Message message;
   message.room_id = music.id();

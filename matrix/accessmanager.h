@@ -13,7 +13,7 @@ class QNetworkReply;
 
 #include "ext/json.hpp"
 
-namespace matrix { class Client; }
+namespace matrix { class Client; class User; class Room; }
 class RoomModel;
 class RoomListModel;
 class MemberListModel;
@@ -29,6 +29,19 @@ enum class LoginResponse
   Invalid = 400,
   Failed = 403,
   RateLimited = 429
+};
+
+
+enum class RoomStateResponse
+{
+  NotAMember = 403,
+  UnknownState = 404
+};
+
+
+enum class RoomState
+{
+  Name
 };
 
 
@@ -48,23 +61,32 @@ signals:
 public slots:
   void login(const QString& id, const QString& pw);
   void logout();
-  void init_sync();
-  void long_sync();
-  void send(const QString& room_id, const QString& message);
+  void send_message(const QString& room_id, const QString& message);
 
 private:
   inline QNetworkReply* post(std::string&& url);
   inline QNetworkReply* post(std::string&& url, std::string&& data);
   inline QNetworkReply* get(std::string&& url);
-  void handle_sync(QNetworkReply* reply);
+
+  void init_sync();
+  void long_sync();
+  void request_user_profile(User* user);
+  void request_room_state(Room* room, RoomState state);
+  void request_room_members(Room* room);
+
   void handle_login(QNetworkReply* reply);
+  void handle_sync(QNetworkReply* reply);
+  void handle_user_profile(User* user, QNetworkReply* reply);
+  void handle_room_state(Room* room, RoomState state, QNetworkReply* reply);
+  void handle_room_members(Room* room, QNetworkReply* reply);
+
   void sync_rooms(nlohmann::json& rooms);
 
   const std::string server_;
+  std::string home_server_;
   const std::string url_base_;
   std::uint64_t transaction_id_ = 255;
 
-  std::string user_id_;
   std::string access_token_;
   std::string next_batch_;
 
