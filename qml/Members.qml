@@ -27,7 +27,7 @@ Page {
           id: userImage
           width: 64
           height: 64
-          source: "qrc:/img/res/img/" + account_name + ".png"
+          source: "image://matrix_media/" + avatar_id
         }
 
         Rectangle {

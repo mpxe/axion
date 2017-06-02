@@ -18,15 +18,17 @@ public:
   const std::string& account_name() const { return account_name_; }
   const std::string& display_name() const { return display_name_; }
   const std::string& avatar_url() const { return avatar_url_; }
+  const std::string& avatar_id() const { return avatar_id_; }
 
   void set_display_name(std::string&& name) { display_name_ = std::move(name); }
-  void set_avatar_url(std::string&& url) { avatar_url_ = std::move(url); }
+  void set_avatar_url(std::string&& url);
 
 private:
   std::string id_;
   std::string account_name_;
   std::string display_name_;
   std::string avatar_url_;
+  std::string avatar_id_;
 };
 
 

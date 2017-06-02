@@ -17,7 +17,7 @@ class MemberListModel : public QAbstractListModel
   Q_PROPERTY(QString room READ room_id WRITE set_room NOTIFY room_changed)
 
 public:
-  enum class MemberRole { UserId = Qt::UserRole, AccountName, DisplayName };
+  enum class MemberRole { UserId = Qt::UserRole, AccountName, DisplayName, AvatarId };
 
   MemberListModel(matrix::Client* client, QObject* parent = nullptr);
 

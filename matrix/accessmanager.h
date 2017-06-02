@@ -13,10 +13,12 @@ class QNetworkReply;
 
 #include "ext/json.hpp"
 
-namespace matrix { class Client; class User; class Room; }
+namespace matrix { class ImageProvider; class Client; class User; class Room; }
+
 class RoomModel;
 class RoomListModel;
 class MemberListModel;
+
 
 
 namespace matrix
@@ -50,8 +52,8 @@ class AccessManager : public QObject
   Q_OBJECT
 
 public:
-  AccessManager(std::string&& server, Client* client, RoomModel* room_model,
-      RoomListModel* room_list_model, MemberListModel* member_list_model);
+  AccessManager(std::string&& server, Client* client, ImageProvider* image_provider,
+      RoomModel* room_model, RoomListModel* room_list_model, MemberListModel* member_list_model);
   ~AccessManager();
 
 signals:
@@ -68,12 +70,14 @@ private:
   inline QNetworkReply* post(std::string&& url, std::string&& data);
   inline QNetworkReply* get(std::string&& url);
 
-  void init_sync();
-  void long_sync();
+  void request_media(const std::string& mxc_url);
+  void request_init_sync();
+  void request_long_sync();
   void request_user_profile(User* user);
   void request_room_state(Room* room, RoomState state);
   void request_room_members(Room* room);
 
+  void handle_media(const std::string& media_id, QNetworkReply* reply);
   void handle_login(QNetworkReply* reply);
   void handle_sync(QNetworkReply* reply);
   void handle_user_profile(User* user, QNetworkReply* reply);
@@ -84,7 +88,7 @@ private:
 
   const std::string server_;
   std::string home_server_;
-  const std::string url_base_;
+  std::string client_url_base_;
   std::uint64_t transaction_id_ = 255;
 
   std::string access_token_;
@@ -92,6 +96,7 @@ private:
 
   QNetworkAccessManager* network_;
   Client* client_;
+  ImageProvider* image_provider_;
   RoomModel* room_model_;
   RoomListModel* room_list_model_;
   MemberListModel* member_list_model_;

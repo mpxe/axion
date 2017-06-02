@@ -30,6 +30,7 @@ QVariant MemberListModel::data(const QModelIndex& index, int role) const
       case MemberRole::UserId: return QString::fromUtf8(user->id().c_str());
       case MemberRole::AccountName: return QString::fromUtf8(user->account_name().c_str());
       case MemberRole::DisplayName: return QString::fromUtf8(user->display_name().c_str());
+      case MemberRole::AvatarId: return QString::fromUtf8(user->avatar_id().c_str());
     }
   }
 
@@ -43,6 +44,7 @@ QHash<int, QByteArray> MemberListModel::roleNames() const
   names[static_cast<int>(MemberRole::UserId)] = "user_id";
   names[static_cast<int>(MemberRole::AccountName)] = "account_name";
   names[static_cast<int>(MemberRole::DisplayName)] = "display_name";
+  names[static_cast<int>(MemberRole::AvatarId)] = "avatar_id";
 
   return names;
 }

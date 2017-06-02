@@ -4,6 +4,7 @@
 #include <QIcon>
 
 #include "matrix/accessmanager.h"
+#include "matrix/imageprovider.h"
 #include "matrix/client.h"
 #include "matrix/user.h"
 #include "matrix/room.h"
@@ -84,10 +85,14 @@ int main(int argc, char *argv[])
   room_model.set_room("!636q39766251:example.com");
   member_list_model.set_room("!636q39766251:example.com");
 
-  matrix::AccessManager matrix{"http://matrix.org", &client, &room_model,
-      &room_list_model, &member_list_model};
+  // Engine takes ownership
+  matrix::ImageProvider* image_provider = new matrix::ImageProvider{};
+
+  matrix::AccessManager matrix{"http://matrix.org", &client, image_provider,
+      &room_model, &room_list_model, &member_list_model};
 
   QQmlApplicationEngine engine;
+  engine.addImageProvider(QLatin1String("matrix_media"), image_provider);
   engine.load(QUrl(QLatin1String("qrc:/qml/main.qml")));
   engine.rootContext()->setContextProperty("matrix", &matrix);
   engine.rootContext()->setContextProperty("roomModel", &room_model);

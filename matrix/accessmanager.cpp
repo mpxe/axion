@@ -1,11 +1,14 @@
 #include "accessmanager.h"
 
 
+#include <regex>
+
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
 #include "ext/fmt/fmtlib.h"
 
+#include "matrix/imageprovider.h"
 #include "matrix/client.h"
 #include "matrix/user.h"
 #include "matrix/room.h"
@@ -24,9 +27,9 @@ namespace
 {
 
 
-inline QNetworkRequest create_request(const std::string& url_base, std::string&& url)
+inline QNetworkRequest create_request(std::string&& url)
 {
-  QNetworkRequest request{QUrl{QString::fromStdString(url_base + url)}};
+  QNetworkRequest request{QUrl{QString::fromStdString(url)}};
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
   return request;
 }
@@ -44,16 +47,14 @@ inline std::string as_string(matrix::RoomState state)
 }  // Anonymous namespace
 
 
-matrix::AccessManager::AccessManager(std::string&& server, Client* client, RoomModel* room_model,
-    RoomListModel* room_list_model, MemberListModel* member_list_model)
-    : server_{std::move(server)}, url_base_{server_ + "/_matrix/client/r0"},
-      network_{new QNetworkAccessManager{this}}, client_{client}, room_model_{room_model},
-      room_list_model_{room_list_model}, member_list_model_{member_list_model}
+matrix::AccessManager::AccessManager(std::string&& server, Client* client, ImageProvider* image_provider,
+    RoomModel* room_model, RoomListModel* room_list_model, MemberListModel* member_list_model)
+    : server_{std::move(server)}, client_url_base_{server_ + "/_matrix/client/r0"},
+      network_{new QNetworkAccessManager{this}}, client_{client}, image_provider_{image_provider},
+      room_model_{room_model}, room_list_model_{room_list_model}, member_list_model_{member_list_model}
 {
   // Establish connection to reduce latency of first http request
   network_->connectToHost(QString::fromStdString(server_));
-
-  connect(network_, &QNetworkAccessManager::finished, this, [this](auto* r){ r->deleteLater(); });
 }
 
 
@@ -66,19 +67,19 @@ matrix::AccessManager::~AccessManager()
 
 QNetworkReply* matrix::AccessManager::post(std::string&& url)
 {
-  return network_->post(create_request(url_base_, std::move(url)), QByteArray{});
+  return network_->post(create_request(std::move(url)), QByteArray{});
 }
 
 
 QNetworkReply* matrix::AccessManager::post(std::string&& url, std::string&& data)
 {
-  return network_->post(create_request(url_base_, std::move(url)), QByteArray::fromStdString(data));
+  return network_->post(create_request(std::move(url)), QByteArray::fromStdString(data));
 }
 
 
 QNetworkReply* matrix::AccessManager::get(std::string&& url)
 {
-  return network_->get(create_request(url_base_, std::move(url)));
+  return network_->get(create_request(std::move(url)));
 }
 
 
@@ -89,64 +90,89 @@ void matrix::AccessManager::login(const QString& id, const QString& pw)
     {"user", id.toStdString()},
     {"password", pw.toStdString()},
   };
-  auto* reply = post("/login", data.dump());
-  connect(reply, &QNetworkReply::readyRead, reply, [this, reply]{ handle_login(reply); });
+  auto* reply = post(client_url_base_ + "/login", data.dump());
+  connect(reply, &QNetworkReply::finished, reply, [this, reply]{ handle_login(reply); reply->deleteLater(); });
 }
 
 
 void matrix::AccessManager::logout()
 {
-  post("/logout");
+  post(client_url_base_ + "/logout");
 }
 
 
 void matrix::AccessManager::send_message(const QString& room_id, const QString& message)
 {
-  auto url = "/rooms/{}/send/m.room.message?access_token={}"_format(room_id.toStdString(),
-      access_token_);
+  auto url = "/rooms/{}/send/m.room.message?access_token={}"_format(room_id.toStdString(), access_token_);
   json data = {
     {"msgtype", "m.text"},
     {"body", message.toStdString()}
   };
-  post(std::move(url), data.dump());
+  post(client_url_base_ + url, data.dump());
 }
 
 
-void matrix::AccessManager::init_sync()
+void matrix::AccessManager::request_media(const std::string& mxc_url)
 {
-  auto* reply = get("/sync?filter={1}&access_token={0}"_format(access_token_,
+  std::regex rx{R"(mxc://(.+)/(.+))"};
+  std::smatch m;
+  if (std::regex_search(mxc_url, m, rx)) {
+    std::string server_name = m[1];
+    std::string media_id = m[2];
+    auto* r = get(server_ + "/_matrix/media/r0/download/{}/{}"_format(server_name, media_id));
+    connect(r, &QNetworkReply::finished, r, [=]{ handle_media(media_id, r); r->deleteLater(); });
+  }
+}
+
+
+void matrix::AccessManager::request_init_sync()
+{
+  auto* r = get(client_url_base_ + "/sync?filter={1}&access_token={0}"_format(access_token_,
       R"({"room":{"timeline":{"limit":1}}})"));
-  connect(reply, &QNetworkReply::readyRead, reply, [=]{ handle_sync(reply); });
+  connect(r, &QNetworkReply::finished, r, [=]{ handle_sync(r); r->deleteLater(); });
 }
 
 
-void matrix::AccessManager::long_sync()
+void matrix::AccessManager::request_long_sync()
 {
-  auto* reply = get("/sync?since={}&timeout={}&access_token={}"_format(next_batch_, 30000,
-      access_token_));
-  connect(reply, &QNetworkReply::readyRead, reply, [=]{ handle_sync(reply); });
+  auto* r = get(client_url_base_ + "/sync?since={}&timeout={}&access_token={}"_format(next_batch_,
+      30000, access_token_));
+  connect(r, &QNetworkReply::finished, r, [=]{ handle_sync(r); r->deleteLater(); });
 }
 
 
 void matrix::AccessManager::request_user_profile(User* user)
 {
-  auto* reply = get("/profile/{}?access_token={}"_format(user->id(), access_token_));
-  connect(reply, &QNetworkReply::readyRead, reply, [=]{ handle_user_profile(user, reply); });
+  auto* r = get(client_url_base_ + "/profile/{}?access_token={}"_format(user->id(), access_token_));
+  connect(r, &QNetworkReply::finished, r, [=]{ handle_user_profile(user, r); r->deleteLater(); });
 }
 
 
 void matrix::AccessManager::request_room_state(Room* room, RoomState state)
 {
-  auto* reply = get("/rooms/{}/state/{}?access_token={}"_format(room->id(), as_string(state),
-      access_token_));
-  connect(reply, &QNetworkReply::readyRead, reply, [=]{ handle_room_state(room, state, reply); });
+  auto* r = get(client_url_base_ + "/rooms/{}/state/{}?access_token={}"_format(room->id(),
+      as_string(state), access_token_));
+  connect(r, &QNetworkReply::finished, r, [=]{ handle_room_state(room, state, r); r->deleteLater(); });
 }
 
 
 void matrix::AccessManager::request_room_members(Room* room)
 {
-  auto* reply = get("/rooms/{}/members?access_token={}"_format(room->id(), access_token_));
-  connect(reply, &QNetworkReply::readyRead, reply, [=]{ handle_room_members(room, reply); });
+  auto* r = get(client_url_base_ + "/rooms/{}/members?access_token={}"_format(room->id(), access_token_));
+  connect(r, &QNetworkReply::finished, r, [=]{ handle_room_members(room, r); r->deleteLater(); });
+}
+
+
+void matrix::AccessManager::handle_media(const std::string& media_id, QNetworkReply* reply)
+{
+  if (reply->error() != QNetworkReply::NoError) {
+    std::cout << reply->errorString().toStdString() << std::endl;
+    return;
+  }
+
+  QPixmap p;
+  p.loadFromData(reply->readAll());
+  image_provider_->add_pixmap(QString::fromStdString(media_id), std::move(p));
 }
 
 
@@ -169,7 +195,7 @@ void matrix::AccessManager::handle_login(QNetworkReply* reply)
         home_server_ = data.value("home_server", ""s);
         auto* self = client_->add_self(User{data.value("user_id", ""s)});
         request_user_profile(self);
-        init_sync();
+        request_init_sync();
         emit login_success();
       }
     }
@@ -206,7 +232,7 @@ void matrix::AccessManager::handle_sync(QNetworkReply* reply)
 
   sync_rooms(data["rooms"]);
 
-  long_sync();
+  request_long_sync();
 }
 
 
@@ -217,6 +243,7 @@ void matrix::AccessManager::handle_user_profile(User* user, QNetworkReply* reply
     auto data = json::parse(reply->readAll().toStdString());
     user->set_display_name(data.value("displayname", ""s));
     user->set_avatar_url(data.value("avatar_url", ""s));
+    request_media(user->avatar_url());
   }
 }
 
@@ -246,6 +273,8 @@ void matrix::AccessManager::handle_room_members(Room* room, QNetworkReply* reply
       else {
         const json& content = u["content"];
         user = client_->add_user(User{std::move(id), content["displayname"]});
+        user->set_avatar_url(content["avatar_url"]);
+        request_media(user->avatar_url());
         room->add_member(user);
       }
     }

@@ -13,3 +13,13 @@ matrix::User::User(std::string&& user_id, std::string&& display_name)
   if (std::regex_search(id_, m, rx))
     account_name_ = m[1];
 }
+
+
+void matrix::User::set_avatar_url(std::string&& url)
+{
+  avatar_url_ = std::move(url);
+  std::regex rx{R"(mxc://.+/(.+))"};
+  std::smatch m;
+  if (std::regex_search(avatar_url_, m, rx))
+    avatar_id_ = m[1];
+}

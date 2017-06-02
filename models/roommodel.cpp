@@ -37,6 +37,11 @@ QVariant RoomModel::data(const QModelIndex& index, int role) const
           return QString::fromUtf8(user->display_name().c_str());
         return QVariant{};
       }
+      case RoomRole::AvatarId: {
+        if (auto* user = room_->member(m->user_id); user)
+          return QString::fromUtf8(user->avatar_id().c_str());
+        return QVariant{};
+      }
       case RoomRole::MessageText: return QString::fromUtf8(m->text.c_str());
       case RoomRole::Timestamp: return m->timestamp;
       case RoomRole::TransmitConfirmed: return m->transmit_confirmed;
@@ -53,6 +58,7 @@ QHash<int, QByteArray> RoomModel::roleNames() const
   names[static_cast<int>(RoomRole::UserId)] = "user_id";
   names[static_cast<int>(RoomRole::AccountName)] = "account_name";
   names[static_cast<int>(RoomRole::DisplayName)] = "display_name";
+  names[static_cast<int>(RoomRole::AvatarId)] = "avatar_id";
   names[static_cast<int>(RoomRole::MessageText)] = "message_text";
   names[static_cast<int>(RoomRole::Timestamp)] = "timestamp";
   names[static_cast<int>(RoomRole::TransmitConfirmed)] = "transmit_confirmed";

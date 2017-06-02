@@ -39,7 +39,7 @@ Page {
           smooth: true
           asynchronous: true
           source: !sentByMe ? dummyRoom ? "qrc:/img/res/img/" + account_name + ".png" :
-              "qrc:/img/res/img/default_user.png" : ""
+              "image://matrix_media/" + avatar_id : ""
           visible: !sentByMe
         }
 

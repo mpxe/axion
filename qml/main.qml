@@ -103,6 +103,12 @@ ApplicationWindow {
       }
 
       MenuBarButton {
+        id: notificationsButton
+        icon: "envelope"
+        onClicked: { }
+      }
+
+      MenuBarButton {
         id: settingsButton
         icon: "wrench"
         onClicked: {
@@ -117,12 +123,6 @@ ApplicationWindow {
         visible: optionsButton.visible &&
             (searchButton.visible || membersButton.visible || inviteButton.visible ||
              notificationsButton.visible || settingsButton.visible)
-      }
-
-      MenuBarButton {
-        id: notificationsButton
-        icon: "envelope"
-        onClicked: { }
       }
 
       MenuBarButton {
