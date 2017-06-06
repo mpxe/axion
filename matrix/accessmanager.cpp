@@ -155,6 +155,20 @@ void matrix::AccessManager::request_media(const std::string& mxc_url)
 }
 
 
+void matrix::AccessManager::request_thumbnail(const std::string& mxc_url, int width, int height)
+{
+  std::regex rx{R"(mxc://(.+)/(.+))"};
+  std::smatch m;
+  if (std::regex_search(mxc_url, m, rx)) {
+    std::string server_name = m[1];
+    std::string media_id = m[2];
+    auto* r = get(server_ + "/_matrix/media/r0/thumbnail/{}/{}?width={}&height={}&method=scale"_format(
+        server_name, media_id, width, height));
+    connect(r, &QNetworkReply::finished, r, [=]{ handle_media(media_id, r); r->deleteLater(); });
+  }
+}
+
+
 void matrix::AccessManager::request_init_sync()
 {
   auto* r = get(client_url_base_ + "/sync?filter={1}&access_token={0}"_format(access_token_,
@@ -195,15 +209,13 @@ void matrix::AccessManager::request_room_members(Room* room)
 
 void matrix::AccessManager::handle_media(const std::string& media_id, QNetworkReply* reply)
 {
-  if (reply->error() != QNetworkReply::NoError) {
-    std::cout << reply->errorString().toStdString() << std::endl;
-    return;
+  if (auto status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+      status_code == 200 && reply->bytesAvailable()) {
+    QPixmap p;
+    p.loadFromData(reply->readAll());
+    std::cout << p.width() << " x " << p.height() << std::endl;
+    image_provider_->add_pixmap(QString::fromStdString(media_id), std::move(p));
   }
-
-  QPixmap p;
-  p.loadFromData(reply->readAll());
-  std::cout << p.width() << " x " << p.height() << std::endl;
-  image_provider_->add_pixmap(QString::fromStdString(media_id), std::move(p));
 }
 
 
@@ -314,7 +326,7 @@ void matrix::AccessManager::handle_room_members(Room* room, QNetworkReply* reply
         }
         if (!avatar_url.is_null()) {
           user->set_avatar_url(avatar_url);
-          request_media(user->avatar_url());
+          request_thumbnail(user->avatar_url(), 64, 64);
         }
         room->add_member(user);
       }
