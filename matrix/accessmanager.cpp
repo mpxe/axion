@@ -35,6 +35,14 @@ inline QNetworkRequest create_request(std::string&& url)
 }
 
 
+inline bool is_valid(const QNetworkReply* reply)
+{
+  return reply->error() == QNetworkReply::NoError &&
+      reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200 &&
+      reply->bytesAvailable();
+}
+
+
 inline std::string as_string(matrix::RoomState state)
 {
   switch (state) {
@@ -209,12 +217,21 @@ void matrix::AccessManager::request_room_members(Room* room)
 
 void matrix::AccessManager::handle_media(const std::string& media_id, QNetworkReply* reply)
 {
-  if (auto status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-      status_code == 200 && reply->bytesAvailable()) {
-    QPixmap p;
-    p.loadFromData(reply->readAll());
-    std::cout << p.width() << " x " << p.height() << std::endl;
-    image_provider_->add_pixmap(QString::fromStdString(media_id), std::move(p));
+  if (is_valid(reply)) {
+    static const std::regex rx{R"((.+)/(.+))"};  // Type/subtype (see RFC 1521, 822)
+    std::smatch m;
+    std::string type, subtype;
+    auto content_type = reply->header(QNetworkRequest::ContentTypeHeader).toString().toStdString();
+    if (std::regex_search(content_type, m, rx)) {
+      type = m[1];
+      subtype = m[2];
+    }
+
+    if (type == "image") {
+      QPixmap p;
+      p.loadFromData(reply->readAll(), subtype.c_str());
+      image_provider_->add_pixmap(QString::fromStdString(media_id), std::move(p));
+    }
   }
 }
 
@@ -225,7 +242,7 @@ void matrix::AccessManager::handle_login(QNetworkReply* reply)
   auto response = static_cast<LoginResponse>(status_code);
 
   json data;
-  if (reply->bytesAvailable() > 0ll)
+  if (reply->bytesAvailable() > 0)
     data = json::parse(reply->readAll().toStdString());
 
   switch (response) {
@@ -262,18 +279,11 @@ void matrix::AccessManager::handle_login(QNetworkReply* reply)
 
 void matrix::AccessManager::handle_sync(QNetworkReply* reply)
 {
-  if (auto status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-      status_code != 200) {
-    std::cerr << "handle_sync: " << status_code << '\n';
+  if (is_valid(reply)) {
+    auto data = json::parse(reply->readAll().toStdString());
+    next_batch_ = data.value("next_batch", ""s);
+    sync_rooms(data["rooms"]);
   }
-
-  if (!reply->bytesAvailable())
-    return;
-
-  auto data = json::parse(reply->readAll().toStdString());
-  next_batch_ = data.value("next_batch", ""s);
-
-  sync_rooms(data["rooms"]);
 
   request_long_sync();
 }
@@ -281,8 +291,7 @@ void matrix::AccessManager::handle_sync(QNetworkReply* reply)
 
 void matrix::AccessManager::handle_user_profile(User* user, QNetworkReply* reply)
 {
-  if (auto status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-      status_code == 200 && reply->bytesAvailable()) {
+  if (is_valid(reply)) {
     auto data = json::parse(reply->readAll().toStdString());
     user->set_display_name(data.value("displayname", ""s));
     user->set_avatar_url(data.value("avatar_url", ""s));
@@ -293,8 +302,7 @@ void matrix::AccessManager::handle_user_profile(User* user, QNetworkReply* reply
 
 void matrix::AccessManager::handle_room_state(Room* room, RoomState state, QNetworkReply* reply)
 {
-  if (auto status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-      status_code == 200 && reply->bytesAvailable()) {
+  if (is_valid(reply)) {
     auto data = json::parse(reply->readAll().toStdString());
     switch (state) {
       case RoomState::Name: room->set_name(data.value("name", ""s)); break;
@@ -305,8 +313,7 @@ void matrix::AccessManager::handle_room_state(Room* room, RoomState state, QNetw
 
 void matrix::AccessManager::handle_room_members(Room* room, QNetworkReply* reply)
 {
-  if (auto status_code = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-      status_code == 200 && reply->bytesAvailable()) {
+  if (is_valid(reply)) {
     auto data = json::parse(reply->readAll().toStdString());
     for (const json& u : data["chunk"]) {
       auto id = u["user_id"].get<std::string>();
