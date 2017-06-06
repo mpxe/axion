@@ -47,6 +47,7 @@ Page {
           width: Math.min(messageText.implicitWidth + 16,
                  chatView.width - (!sentByMe ? userImage.width + 12 : 0))
           height: messageText.implicitHeight + 16
+          radius: 8
           color: sentByMe ? transmit_confirmed ? "teal" : "grey" : "steelblue"
 
           Label {
