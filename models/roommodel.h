@@ -38,8 +38,8 @@ public:
   void set_room(const QString& id);
   const matrix::Room* current_room() const { return room_; }
 
-  Q_INVOKABLE void add_message(const QString& message);
-  void add_message(matrix::Message&& message);
+  matrix::Message* add_message(matrix::Message&& message);
+  void data_changed(matrix::Message* message);
 
 signals:
   void room_changed();

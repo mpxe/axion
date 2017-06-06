@@ -72,7 +72,6 @@ Page {
       Layout.fillWidth: true
 
       function sendMessage() {
-        chatView.model.add_message(messageField.text);
         matrix.send_message(roomModel.room, messageField.text);
         messageField.text = "";
       }

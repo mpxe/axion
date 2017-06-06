@@ -65,6 +65,18 @@ matrix::AccessManager::~AccessManager()
 }
 
 
+QNetworkReply* matrix::AccessManager::put(std::string&& url)
+{
+  return network_->put(create_request(std::move(url)), QByteArray{});
+}
+
+
+QNetworkReply* matrix::AccessManager::put(std::string&& url, std::string&& data)
+{
+  return network_->put(create_request(std::move(url)), QByteArray::fromStdString(data));
+}
+
+
 QNetworkReply* matrix::AccessManager::post(std::string&& url)
 {
   return network_->post(create_request(std::move(url)), QByteArray{});
@@ -90,25 +102,43 @@ void matrix::AccessManager::login(const QString& id, const QString& pw)
     {"user", id.toStdString()},
     {"password", pw.toStdString()},
   };
-  auto* reply = post(client_url_base_ + "/login", data.dump());
-  connect(reply, &QNetworkReply::finished, reply, [this, reply]{ handle_login(reply); reply->deleteLater(); });
+  auto* r = post(client_url_base_ + "/login", data.dump());
+  connect(r, &QNetworkReply::finished, r, [this, r]{ handle_login(r); r->deleteLater(); });
 }
 
 
 void matrix::AccessManager::logout()
 {
-  post(client_url_base_ + "/logout");
+  auto* r = post(client_url_base_ + "/logout");
+  connect(r, &QNetworkReply::finished, r, [r]{ r->deleteLater(); });
 }
 
 
-void matrix::AccessManager::send_message(const QString& room_id, const QString& message)
+void matrix::AccessManager::send_message(const QString& room_id, const QString& text)
 {
-  auto url = "/rooms/{}/send/m.room.message?access_token={}"_format(room_id.toStdString(), access_token_);
+  matrix::Message message;
+  message.room_id = room_id.toStdString();
+  message.user_id = client_->user_id();
+  message.text = text.toStdString();
+
+  auto url = "/rooms/{}/send/m.room.message/{}?access_token={}"_format(message.room_id,
+      ++transaction_id_, access_token_);
   json data = {
     {"msgtype", "m.text"},
-    {"body", message.toStdString()}
+    {"body", message.text}
   };
-  post(client_url_base_ + url, data.dump());
+
+  auto* m = room_model_->add_message(std::move(message));
+  auto* r = put(client_url_base_ + url, data.dump());
+
+  connect(r, &QNetworkReply::finished, r, [this, m, r]{
+    if (auto status_code = r->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        status_code == 200 && r->bytesAvailable()) {
+      auto data = json::parse(r->readAll().toStdString());
+      unconfirmed_messages_.insert(std::pair{data["event_id"], m});
+    }
+    r->deleteLater();
+  });
 }
 
 
@@ -172,6 +202,7 @@ void matrix::AccessManager::handle_media(const std::string& media_id, QNetworkRe
 
   QPixmap p;
   p.loadFromData(reply->readAll());
+  std::cout << p.width() << " x " << p.height() << std::endl;
   image_provider_->add_pixmap(QString::fromStdString(media_id), std::move(p));
 }
 
@@ -306,8 +337,15 @@ void matrix::AccessManager::sync_rooms(json& rooms)
         for (const auto& event : timeline["events"]) {
           const auto& content = event["content"];
           const auto sender = event["sender"].get<std::string>();
-          if (sender != client_->user_id() && event["type"] == "m.room.message" &&
-              content["msgtype"] == "m.text") {
+          if (sender == client_->user_id()) {
+            auto it = unconfirmed_messages_.find(event["event_id"]);
+            if (it != std::end(unconfirmed_messages_)) {
+              auto* m = it->second;
+              m->transmit_confirmed = true;
+              room_model_->data_changed(m);
+            }
+          }
+          else if (event["type"] == "m.room.message" && content["msgtype"] == "m.text") {
             Message message;
             message.event_id = event["event_id"].get<std::string>();
             message.room_id = room_id;

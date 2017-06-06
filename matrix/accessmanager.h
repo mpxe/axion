@@ -13,7 +13,7 @@ class QNetworkReply;
 
 #include "ext/json.hpp"
 
-namespace matrix { class ImageProvider; class Client; class User; class Room; }
+namespace matrix { class ImageProvider; class Client; class User; class Room; class Message; }
 
 class RoomModel;
 class RoomListModel;
@@ -66,6 +66,8 @@ public slots:
   void send_message(const QString& room_id, const QString& message);
 
 private:
+  inline QNetworkReply* put(std::string&& url);
+  inline QNetworkReply* put(std::string&& url, std::string&& data);
   inline QNetworkReply* post(std::string&& url);
   inline QNetworkReply* post(std::string&& url, std::string&& data);
   inline QNetworkReply* get(std::string&& url);
@@ -100,6 +102,8 @@ private:
   RoomModel* room_model_;
   RoomListModel* room_list_model_;
   MemberListModel* member_list_model_;
+
+  std::map<std::string, Message*> unconfirmed_messages_;
 };
 
 

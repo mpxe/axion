@@ -27,24 +27,26 @@ public:
 
   std::size_t message_count() const { return messages_.size(); }
   std::size_t member_count() const { return members_.size(); }
+  std::size_t index_of(const Message* message);
 
   Message* message(std::size_t i) { return i < message_count() ? &messages_[i] : nullptr; }
+  Message* last_message() { return messages_.empty() ? nullptr : &messages_.front(); }
   User* member(std::size_t i) { return i < member_count() ? members_[i] : nullptr; }
   User* member(std::string_view id);
 
   void set_name(std::string&& name) { name_ = std::move(name); }
   void set_main_address(std::string&& main_address) { main_address_ = std::move(main_address); }
 
-  void add_message(matrix::Message&& message) { messages_.push_front(std::move(message)); }
-  void add_member(matrix::User* user) { members_.push_back(user); }
+  void add_message(Message&& message) { messages_.push_front(std::move(message)); }
+  void add_member(User* user) { members_.push_back(user); }
 
 private:
   std::string id_;
   std::string name_;
   std::string main_address_;
   std::vector<std::string> local_addresses_;
-  std::deque<matrix::Message> messages_;
-  std::vector<matrix::User*> members_;
+  std::deque<Message> messages_;
+  std::vector<User*> members_;
 };
 
 

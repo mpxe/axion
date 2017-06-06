@@ -78,20 +78,18 @@ void RoomModel::set_room(const QString& id)
 }
 
 
-void RoomModel::add_message(const QString& text)
+matrix::Message* RoomModel::add_message(matrix::Message&& message)
 {
-  matrix::Message message;
-  message.room_id = room_->id();
-  message.user_id = client_->user_id();
-  message.text = text.toStdString();
-  message.transmit_confirmed = false;
-  add_message(std::move(message));
+  beginInsertRows(QModelIndex{}, 0, 0);
+  room_->add_message(std::move(message));
+  endInsertRows();
+  return room_->last_message();
 }
 
 
-void RoomModel::add_message(matrix::Message&& message)
+void RoomModel::data_changed(matrix::Message* message)
 {
-  beginInsertRows(QModelIndex{}, 0, 0);
-  client_->add_message(std::move(message));
-  endInsertRows();
+  auto i = room_->index_of(message);
+  if (i < static_cast<std::size_t>(rowCount()))
+    emit dataChanged(index(i), index(i));
 }
