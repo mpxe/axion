@@ -271,10 +271,20 @@ void matrix::AccessManager::handle_room_members(Room* room, QNetworkReply* reply
         room->add_member(user);
       }
       else {
-        const json& content = u["content"];
-        user = client_->add_user(User{std::move(id), content["displayname"]});
-        user->set_avatar_url(content["avatar_url"]);
-        request_media(user->avatar_url());
+        auto content = u["content"];
+        auto displayname = content["displayname"];
+        auto avatar_url = content["avatar_url"];
+        user = client_->add_user(User{std::move(id)});
+        if (!displayname.is_null()) {
+          user->set_display_name(displayname);
+        }
+        else {
+          user->set_display_name(std::string{user->account_name()});
+        }
+        if (!avatar_url.is_null()) {
+          user->set_avatar_url(avatar_url);
+          request_media(user->avatar_url());
+        }
         room->add_member(user);
       }
     }
