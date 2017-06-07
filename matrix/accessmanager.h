@@ -88,7 +88,8 @@ private:
   void handle_room_state(Room* room, RoomState state, QNetworkReply* reply);
   void handle_room_members(Room* room, QNetworkReply* reply);
 
-  void sync_rooms(nlohmann::json& rooms);
+  void sync_rooms(const nlohmann::json& rooms);
+  void sync_room(Room* room, const nlohmann::json& timeline);
 
   const std::string server_;
   std::string home_server_;

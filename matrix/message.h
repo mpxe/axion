@@ -12,7 +12,7 @@ namespace matrix
 
 enum class MessageType
 {
-  Text, Emote, Notice, Image, File, Location, Video, Audio
+  Text, Emote, Notice, Image, File, Location, Video, Audio, Unknown
 };
 
 

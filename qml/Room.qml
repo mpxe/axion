@@ -48,14 +48,20 @@ Page {
                  chatView.width - (!sentByMe ? userImage.width + 12 : 0))
           height: messageText.implicitHeight + 16
           radius: 8
-          color: sentByMe ? transmit_confirmed ? "teal" : "grey" : "steelblue"
+          color: sentByMe ? message_type == 1 ? transmit_confirmed ? "darkorchid" : "grey"
+                                              : transmit_confirmed ? "teal" : "grey"
+                          : message_type == 1 ? "slateblue" : "steelblue"
 
           Label {
             id: messageText
             renderType: Text.NativeRendering
             anchors.fill: parent
             anchors.margins: 8
-            text: message_text
+            text: sentByMe ? message_type == 1 ? "<i>" + display_name + " " + message_text + "</i>"
+                                               : message_text
+                           : message_type == 1 ? "<i>" + display_name + " " + message_text + "</i>"
+                                               : "<b><font color=\"gold\">" + display_name +
+                                                 "</font></b><br>" + message_text
             font.family: "Segoe UI"
             font.bold: false
             font.italic: false

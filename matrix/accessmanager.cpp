@@ -8,6 +8,7 @@
 
 #include "ext/fmt/fmtlib.h"
 
+#include "util/util.h"
 #include "matrix/imageprovider.h"
 #include "matrix/client.h"
 #include "matrix/user.h"
@@ -49,6 +50,44 @@ inline std::string as_string(matrix::RoomState state)
     case matrix::RoomState::Name: return "m.room.name"s;
     default: return ""s;
   }
+}
+
+
+inline matrix::MessageType as_msgtype(std::string_view sv)
+{
+  static const std::map<std::string, matrix::MessageType, std::less<>> types{
+    {"m.text", matrix::MessageType::Text},
+    {"m.emote", matrix::MessageType::Emote},
+    {"m.notice", matrix::MessageType::Notice},
+    {"m.image", matrix::MessageType::Image},
+    {"m.file", matrix::MessageType::File},
+    {"m.location", matrix::MessageType::Location},
+    {"m.video", matrix::MessageType::Video},
+    {"m.audio", matrix::MessageType::Audio}
+  };
+  const auto it = types.find(sv);
+  if (it != std::end(types))
+    return it->second;
+  return matrix::MessageType::Unknown;
+}
+
+
+inline std::string as_string(matrix::MessageType type)
+{
+  static const std::map<matrix::MessageType, std::string> types{
+    {matrix::MessageType::Text, "m.text"},
+    {matrix::MessageType::Emote, "m.emote"},
+    {matrix::MessageType::Notice, "m.notice"},
+    {matrix::MessageType::Image, "m.image"},
+    {matrix::MessageType::File, "m.file"},
+    {matrix::MessageType::Location, "m.location"},
+    {matrix::MessageType::Video, "m.video"},
+    {matrix::MessageType::Audio, "m.audio"}
+  };
+  const auto it = types.find(type);
+  if (it != std::end(types))
+    return it->second;
+  return "m.text";
 }
 
 
@@ -129,10 +168,18 @@ void matrix::AccessManager::send_message(const QString& room_id, const QString& 
   message.user_id = client_->user_id();
   message.text = text.toStdString();
 
+  if (util::starts_with(message.text, "/me ")) {
+    message.type = MessageType::Emote;
+    message.text.erase(0, 4);
+  }
+  else {
+    message.type = MessageType::Text;
+  }
+
   auto url = "/rooms/{}/send/m.room.message/{}?access_token={}"_format(message.room_id,
       ++transaction_id_, access_token_);
   json data = {
-    {"msgtype", "m.text"},
+    {"msgtype", as_string(message.type)},
     {"body", message.text}
   };
 
@@ -342,42 +389,56 @@ void matrix::AccessManager::handle_room_members(Room* room, QNetworkReply* reply
 }
 
 
-void matrix::AccessManager::sync_rooms(json& rooms)
+void matrix::AccessManager::sync_rooms(const json& rooms)
 {
   for (auto it = std::begin(rooms["join"]); it != std::end(rooms["join"]); ++it) {
     std::string room_id = it.key();
-    if (auto* room = client_->room(room_id); !room) {
+    auto* room = client_->room(room_id);
+
+    // User joined a new room
+    if (!room) {
       room = room_list_model_->add_room(Room{room_id});
       request_room_state(room, RoomState::Name);
       request_room_members(room);
     }
-    if (auto* room = client_->room(room_id); room) {
-      if (const auto& timeline = it.value()["timeline"]; !timeline.empty()) {
-        for (const auto& event : timeline["events"]) {
-          const auto& content = event["content"];
-          const auto sender = event["sender"].get<std::string>();
-          if (sender == client_->user_id()) {
-            auto it = unconfirmed_messages_.find(event["event_id"]);
-            if (it != std::end(unconfirmed_messages_)) {
-              auto* m = it->second;
-              m->transmit_confirmed = true;
-              room_model_->data_changed(m);
-            }
-          }
-          else if (event["type"] == "m.room.message" && content["msgtype"] == "m.text") {
-            Message message;
-            message.event_id = event["event_id"].get<std::string>();
-            message.room_id = room_id;
-            message.user_id = std::move(sender);
-            message.type = MessageType::Text;
-            message.text = content["body"].get<std::string>();
-            if (room == room_model_->current_room())
-              room_model_->add_message(std::move(message));
-            else
-              room->add_message(std::move(message));
-          }
-        }
+
+    if (const auto& timeline = it.value()["timeline"]; !timeline.empty()) {
+      sync_room(room, timeline);
+    }
+  }
+}
+
+
+void matrix::AccessManager::sync_room(Room* room, const json& timeline)
+{
+  for (const auto& event : timeline["events"]) {
+    const auto& content = event["content"];
+    const auto sender = event["sender"].get<std::string>();
+    if (sender == client_->user_id()) {
+      // Confirm transmitted messages by comparing local with remote echo from stream
+      auto it = unconfirmed_messages_.find(event["event_id"]);
+      if (it != std::end(unconfirmed_messages_)) {
+        auto* m = it->second;
+        m->transmit_confirmed = true;
+        room_model_->data_changed(m);
       }
+    }
+    else if (event["type"] == "m.room.message") {
+      Message message;
+      message.event_id = event["event_id"].get<std::string>();
+      message.room_id = room->id();
+      message.user_id = std::move(sender);
+      message.type = as_msgtype(content["msgtype"].get<std::string>());
+
+      switch (message.type) {
+        case matrix::MessageType::Text: message.text = content["body"].get<std::string>(); break;
+        default: message.text = content["body"].get<std::string>();
+      }
+
+      if (room == room_model_->current_room())
+        room_model_->add_message(std::move(message));
+      else
+        room->add_message(std::move(message));
     }
   }
 }
