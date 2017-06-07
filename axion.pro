@@ -50,4 +50,5 @@ HEADERS += \
     models/roomlistmodel.h \
     models/roommodel.h \
     ext/fmt/fmtlib.h \
-    matrix/imageprovider.h
+    matrix/imageprovider.h \
+    util/util.h
