@@ -48,9 +48,39 @@ Page {
                  chatView.width - (!sentByMe ? userImage.width + 12 : 0))
           height: messageText.implicitHeight + 16
           radius: 8
-          color: sentByMe ? message_type == 1 ? transmit_confirmed ? "darkorchid" : "grey"
-                                              : transmit_confirmed ? "teal" : "grey"
-                          : message_type == 1 ? "slateblue" : "steelblue"
+          function deduceStateColor()
+          {
+            var stateColor = "grey"
+            if (sentByMe) {
+              if (message_type == 1) {
+                if (transmit_confirmed) {
+                  stateColor = "darkorchid"
+                }
+                else if (transmit_failed) {
+                  stateColor = "indianred"
+                }
+              }
+              else {
+                if (transmit_confirmed) {
+                  stateColor = "teal"
+                }
+                else if (transmit_failed) {
+                  stateColor = "indianred"
+                }
+              }
+            }
+            else {
+              if (message_type == 1) {
+                stateColor = "slateblue"
+              }
+              else {
+                stateColor = "steelblue"
+              }
+            }
+
+            return stateColor
+          }
+          color: deduceStateColor()
 
           Label {
             id: messageText
@@ -60,7 +90,7 @@ Page {
             text: sentByMe ? message_type == 1 ? "<i>" + display_name + " " + message_text + "</i>"
                                                : message_text
                            : message_type == 1 ? "<i>" + display_name + " " + message_text + "</i>"
-                                               : "<b><font color=\"gold\">" + display_name +
+                                               : "<b><font color=\"lightgrey\">" + display_name +
                                                  "</font></b><br>" + message_text
             font.family: "Segoe UI"
             font.bold: false
