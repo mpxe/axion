@@ -19,6 +19,7 @@ enum class MessageType
 struct Message
 {
   bool transmit_confirmed = false;
+  bool transmit_failed = false;
   bool redacted = false;
   MessageType type;
   std::uint64_t timestamp = 0;

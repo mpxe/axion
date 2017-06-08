@@ -24,7 +24,7 @@ class RoomModel : public QAbstractListModel
 public:
   enum class RoomRole {
     UserId = Qt::UserRole, AccountName, DisplayName, AvatarId, MessageType, MessageText,
-        Timestamp, TransmitConfirmed
+        Timestamp, TransmitConfirmed, TransmitFailed
   };
 
   RoomModel(matrix::Client* client, QObject* parent = nullptr);
