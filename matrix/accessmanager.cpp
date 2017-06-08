@@ -187,10 +187,23 @@ void matrix::AccessManager::send_message(const QString& room_id, const QString& 
   auto* r = put(client_url_base_ + url, data.dump());
 
   connect(r, &QNetworkReply::finished, r, [this, m, r]{
-    if (auto status_code = r->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        status_code == 200 && r->bytesAvailable()) {
+    if (is_valid(r)) {
       auto data = json::parse(r->readAll().toStdString());
-      unconfirmed_messages_.insert(std::pair{data["event_id"], m});
+      auto event_id = data["event_id"].get<std::string>();
+      // Remote echo may have already arrived before request finished (see r0.2.0 spec local echo)
+      if (auto it = std::find(std::begin(confirmed_events_), std::end(confirmed_events_), event_id);
+          it != std::end(confirmed_events_)) {
+        confirmed_events_.erase(it);
+        m->transmit_confirmed = true;
+        room_model_->data_changed(m);
+      }
+      else {
+        unconfirmed_messages_.insert(std::pair{event_id, m});
+      }
+    }
+    else {
+      m->transmit_failed = true;
+      room_model_->data_changed(m);
     }
     r->deleteLater();
   });
@@ -419,8 +432,13 @@ void matrix::AccessManager::sync_room(Room* room, const json& timeline)
       auto it = unconfirmed_messages_.find(event["event_id"]);
       if (it != std::end(unconfirmed_messages_)) {
         auto* m = it->second;
+        unconfirmed_messages_.erase(it);
         m->transmit_confirmed = true;
         room_model_->data_changed(m);
+      }
+      else {
+        // Remote echo arrived before original send request finished (see r0.2.0 spec local echo)
+        confirmed_events_.push_back(event["event_id"]);
       }
     }
     else if (event["type"] == "m.room.message") {

@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <unordered_map>
 
 #include <QObject>
@@ -107,6 +108,7 @@ private:
   MemberListModel* member_list_model_;
 
   std::map<std::string, Message*> unconfirmed_messages_;
+  std::vector<std::string> confirmed_events_;
 };
 
 
