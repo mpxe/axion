@@ -16,12 +16,12 @@ QPixmap matrix::ImageProvider::requestPixmap(const QString& id, QSize* size,
   if (images_.contains(id)) {
     const auto& p = images_[id];
     if (size)
-      *size = QSize{p.size()};
+      *size = p.size();
     return p;
   }
 
   if (size)
-    *size = QSize{default_image_.size()};
+    *size = default_image_.size();
 
   return default_image_;
 }
