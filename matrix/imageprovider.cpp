@@ -13,13 +13,15 @@ matrix::ImageProvider::ImageProvider() : QQuickImageProvider{QQuickImageProvider
 QPixmap matrix::ImageProvider::requestPixmap(const QString& id, QSize* size,
     [[maybe_unused]] const QSize& requested_size)
 {
-  if (size)
-    *size = QSize(32, 32);
-
-  QPixmap p;
   if (images_.contains(id)) {
-    return images_[id];
+    const auto& p = images_[id];
+    if (size)
+      *size = QSize{p.size()};
+    return p;
   }
+
+  if (size)
+    *size = QSize{default_image_.size()};
 
   return default_image_;
 }
