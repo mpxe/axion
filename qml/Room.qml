@@ -44,9 +44,9 @@ Page {
         }
 
         Rectangle {
-          width: Math.min(messageText.implicitWidth + 16,
+          width: message_type == 3 ? messageImage.implicitWidth + 16 : Math.min(messageText.implicitWidth + 16,
                  chatView.width - (!sentByMe ? userImage.width + 12 : 0))
-          height: messageText.implicitHeight + 16
+          height: message_type == 3 ? messageImage.implicitHeight + 16 : messageText.implicitHeight + 16
           radius: 8
           function deduceStateColor()
           {
@@ -98,6 +98,19 @@ Page {
             font.pixelSize: 18
             wrapMode: Label.Wrap
             color: "white"
+            visible: message_type != 3
+          }
+
+          Image {
+            id: messageImage
+            anchors.fill: parent
+            anchors.margins: 8
+            //width: 256
+            //height: 256
+            smooth: true
+            asynchronous: true
+            source: "image://matrix_media/" + image_id
+            visible: message_type == 3
           }
         }
       }

@@ -27,6 +27,8 @@ struct Message
   std::string room_id;
   std::string user_id;
   std::string text;
+  std::string url;
+  std::string image_id;
 };
 
 

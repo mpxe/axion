@@ -223,7 +223,7 @@ void matrix::AccessManager::request_media(const std::string& mxc_url)
 }
 
 
-void matrix::AccessManager::request_thumbnail(const std::string& mxc_url, int width, int height)
+QNetworkReply* matrix::AccessManager::request_thumbnail(const std::string& mxc_url, int width, int height)
 {
   std::regex rx{R"(mxc://(.+)/(.+))"};
   std::smatch m;
@@ -233,7 +233,9 @@ void matrix::AccessManager::request_thumbnail(const std::string& mxc_url, int wi
     auto* r = get(server_ + "/_matrix/media/r0/thumbnail/{}/{}?width={}&height={}&method=scale"_format(
         server_name, media_id, width, height));
     connect(r, &QNetworkReply::finished, r, [=]{ handle_media(media_id, r); r->deleteLater(); });
+    return r;
   }
+  return nullptr;
 }
 
 
@@ -447,16 +449,29 @@ void matrix::AccessManager::sync_room(Room* room, const json& timeline)
       message.room_id = room->id();
       message.user_id = std::move(sender);
       message.type = as_msgtype(content["msgtype"].get<std::string>());
+      message.text = content["body"].get<std::string>();
 
-      switch (message.type) {
-        case matrix::MessageType::Text: message.text = content["body"].get<std::string>(); break;
-        default: message.text = content["body"].get<std::string>();
+      if (message.type == matrix::MessageType::Image) {
+        message.url = content["url"].get<std::string>();
+        std::regex rx{R"(mxc://.+/(.+))"};
+        std::smatch m;
+        if (std::regex_search(message.url, m, rx))
+          message.image_id = m[1];
+        // Delay message until data was retrieved
+        auto* r = request_thumbnail(message.url, 512, 512);
+        connect(r, &QNetworkReply::finished, r, [this, room, m{std::move(message)}]() mutable {
+          if (room == room_model_->current_room())
+            room_model_->add_message(std::move(m));
+          else
+            room->add_message(std::move(m));
+        });
       }
-
-      if (room == room_model_->current_room())
-        room_model_->add_message(std::move(message));
-      else
-        room->add_message(std::move(message));
+      else {
+        if (room == room_model_->current_room())
+          room_model_->add_message(std::move(message));
+        else
+          room->add_message(std::move(message));
+      }
     }
   }
 }

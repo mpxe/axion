@@ -74,7 +74,7 @@ private:
   inline QNetworkReply* get(std::string&& url);
 
   void request_media(const std::string& mxc_url);
-  void request_thumbnail(const std::string& mxc_url, int width, int height);
+  QNetworkReply* request_thumbnail(const std::string& mxc_url, int width, int height);
 
   void request_init_sync();
   void request_long_sync();
