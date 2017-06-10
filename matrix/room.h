@@ -27,7 +27,7 @@ public:
 
   std::size_t message_count() const { return messages_.size(); }
   std::size_t member_count() const { return members_.size(); }
-  std::size_t index_of(const Message* message);
+  std::size_t index_of(const Message* message) const;
 
   Message* message(std::size_t i) { return i < message_count() ? &messages_[i] : nullptr; }
   Message* last_message() { return messages_.empty() ? nullptr : &messages_.front(); }

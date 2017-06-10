@@ -5,7 +5,7 @@
 #include <regex>
 
 
-std::size_t matrix::Room::index_of(const matrix::Message* message)
+std::size_t matrix::Room::index_of(const matrix::Message* message) const
 {
   return std::distance(std::begin(messages_), std::find_if(std::begin(messages_),
       std::end(messages_), [message](const auto& m){ return &m == message; }));

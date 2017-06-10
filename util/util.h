@@ -11,7 +11,7 @@ namespace util
 {
 
 
-bool starts_with(const std::string_view text, const std::string_view token)
+bool starts_with(std::string_view text, std::string_view token)
 {
   if (text.empty() || token.empty() || token.size() > text.size())
     return false;
