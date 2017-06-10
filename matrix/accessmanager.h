@@ -73,10 +73,8 @@ private:
   inline QNetworkReply* post(std::string&& url, std::string&& data);
   inline QNetworkReply* get(std::string&& url);
 
-  QNetworkReply* request_media(std::string_view server, std::string_view id);
   QNetworkReply* request_media(std::string&& server, std::string&& id);
   QNetworkReply* request_media(std::string_view mxc_url);
-  QNetworkReply* request_thumbnail(std::string_view server, std::string_view id, int width, int height);
   QNetworkReply* request_thumbnail(std::string&& server, std::string&& id, int width, int height);
   QNetworkReply* request_thumbnail(std::string_view mxc_url, int width, int height);
 

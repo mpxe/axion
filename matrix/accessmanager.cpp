@@ -233,12 +233,6 @@ void matrix::AccessManager::send_message(const QString& room_id, const QString& 
 }
 
 
-QNetworkReply* matrix::AccessManager::request_media(std::string_view server, std::string_view id)
-{
-  return get(server_ + "/_matrix/media/r0/download/{}/{}"_format(std::string{server}, std::string{id}));
-}
-
-
 QNetworkReply* matrix::AccessManager::request_media(std::string&& server, std::string&& id)
 {
   return get(server_ + "/_matrix/media/r0/download/{}/{}"_format(std::move(server), std::move(id)));
@@ -251,14 +245,6 @@ QNetworkReply* matrix::AccessManager::request_media(std::string_view mxc_url)
     return request_media(std::move(server), std::move(id));
   }
   return nullptr;
-}
-
-
-QNetworkReply* matrix::AccessManager::request_thumbnail(std::string_view server, std::string_view id,
-    int width, int height)
-{
-  return get(server_ + "/_matrix/media/r0/thumbnail/{}/{}?width={}&height={}&method=scale"_format(
-      std::string{server}, std::string{id}, width, height));
 }
 
 
