@@ -21,6 +21,7 @@ struct Message
   bool transmit_confirmed = false;
   bool transmit_failed = false;
   bool redacted = false;
+  bool content_loading = false;
   MessageType type;
   std::uint64_t timestamp = 0;
   std::string event_id;

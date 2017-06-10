@@ -1,6 +1,7 @@
 #include "accessmanager.h"
 
 
+#include <tuple>
 #include <regex>
 
 #include <QNetworkAccessManager>
@@ -38,9 +39,31 @@ inline QNetworkRequest create_request(std::string&& url)
 
 inline bool is_valid(const QNetworkReply* reply)
 {
-  return reply->error() == QNetworkReply::NoError &&
+  return reply && reply->error() == QNetworkReply::NoError &&
       reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200 &&
       reply->bytesAvailable();
+}
+
+
+inline std::tuple<std::string, std::string> split_mxc(std::string_view mxc_url)
+{
+  static const std::regex rx{R"(mxc://(.+)/(.+))"};
+  std::match_results<std::string_view::const_iterator> m;
+  if (std::regex_search(std::begin(mxc_url), std::end(mxc_url), m, rx)) {
+    return {m[1], m[2]};
+  }
+  return {"", ""};
+}
+
+
+inline std::tuple<std::string, std::string> split_content_type(std::string_view content_type)
+{
+  static const std::regex rx{R"((.+)/(.+))"};  // Type/subtype (see RFC 1521, 822)
+  std::match_results<std::string_view::const_iterator> m;
+  if (std::regex_search(std::begin(content_type), std::end(content_type), m, rx)) {
+    return {m[1], m[2]};
+  }
+  return {"", ""};
 }
 
 
@@ -210,30 +233,47 @@ void matrix::AccessManager::send_message(const QString& room_id, const QString& 
 }
 
 
-void matrix::AccessManager::request_media(const std::string& mxc_url)
+QNetworkReply* matrix::AccessManager::request_media(std::string_view server, std::string_view id)
 {
-  std::regex rx{R"(mxc://(.+)/(.+))"};
-  std::smatch m;
-  if (std::regex_search(mxc_url, m, rx)) {
-    std::string server_name = m[1];
-    std::string media_id = m[2];
-    auto* r = get(server_ + "/_matrix/media/r0/download/{}/{}"_format(server_name, media_id));
-    connect(r, &QNetworkReply::finished, r, [=]{ handle_media(media_id, r); r->deleteLater(); });
-  }
+  return get(server_ + "/_matrix/media/r0/download/{}/{}"_format(std::string{server}, std::string{id}));
 }
 
 
-QNetworkReply* matrix::AccessManager::request_thumbnail(const std::string& mxc_url, int width, int height)
+QNetworkReply* matrix::AccessManager::request_media(std::string&& server, std::string&& id)
 {
-  std::regex rx{R"(mxc://(.+)/(.+))"};
-  std::smatch m;
-  if (std::regex_search(mxc_url, m, rx)) {
-    std::string server_name = m[1];
-    std::string media_id = m[2];
-    auto* r = get(server_ + "/_matrix/media/r0/thumbnail/{}/{}?width={}&height={}&method=scale"_format(
-        server_name, media_id, width, height));
-    connect(r, &QNetworkReply::finished, r, [=]{ handle_media(media_id, r); r->deleteLater(); });
-    return r;
+  return get(server_ + "/_matrix/media/r0/download/{}/{}"_format(std::move(server), std::move(id)));
+}
+
+
+QNetworkReply* matrix::AccessManager::request_media(std::string_view mxc_url)
+{
+  if (auto&& [server, id] = split_mxc(mxc_url); !server.empty() && !id.empty()) {
+    return request_media(std::move(server), std::move(id));
+  }
+  return nullptr;
+}
+
+
+QNetworkReply* matrix::AccessManager::request_thumbnail(std::string_view server, std::string_view id,
+    int width, int height)
+{
+  return get(server_ + "/_matrix/media/r0/thumbnail/{}/{}?width={}&height={}&method=scale"_format(
+      std::string{server}, std::string{id}, width, height));
+}
+
+
+QNetworkReply* matrix::AccessManager::request_thumbnail(std::string&& server, std::string&& id,
+    int width, int height)
+{
+  return get(server_ + "/_matrix/media/r0/thumbnail/{}/{}?width={}&height={}&method=scale"_format(
+      std::move(server), std::move(id), width, height));
+}
+
+
+QNetworkReply* matrix::AccessManager::request_thumbnail(std::string_view mxc_url, int width, int height)
+{
+  if (auto&& [server, id] = split_mxc(mxc_url); !server.empty() && !id.empty()) {
+    return request_thumbnail(std::move(server), std::move(id), width, height);
   }
   return nullptr;
 }
@@ -242,7 +282,7 @@ QNetworkReply* matrix::AccessManager::request_thumbnail(const std::string& mxc_u
 void matrix::AccessManager::request_init_sync()
 {
   auto* r = get(client_url_base_ + "/sync?filter={1}&access_token={0}"_format(access_token_,
-      R"({"room":{"timeline":{"limit":1}}})"));
+      R"({"room":{"timeline":{"limit":20}}})"));
   connect(r, &QNetworkReply::finished, r, [=]{ handle_sync(r); r->deleteLater(); });
 }
 
@@ -277,22 +317,25 @@ void matrix::AccessManager::request_room_members(Room* room)
 }
 
 
-void matrix::AccessManager::handle_media(const std::string& media_id, QNetworkReply* reply)
+void matrix::AccessManager::download_thumbnail(std::string_view mxc_url, int width, int height)
+{
+  if (auto* r = request_thumbnail(mxc_url, width, height); r) {
+    connect(r, &QNetworkReply::finished, r, [=]{
+      handle_content(std::get<1>(split_mxc(mxc_url)), r);
+      r->deleteLater();
+    });
+  }
+}
+
+
+void matrix::AccessManager::handle_content(std::string_view id, QNetworkReply* reply)
 {
   if (is_valid(reply)) {
-    static const std::regex rx{R"((.+)/(.+))"};  // Type/subtype (see RFC 1521, 822)
-    std::smatch m;
-    std::string type, subtype;
     auto content_type = reply->header(QNetworkRequest::ContentTypeHeader).toString().toStdString();
-    if (std::regex_search(content_type, m, rx)) {
-      type = m[1];
-      subtype = m[2];
-    }
-
-    if (type == "image") {
+    if (auto [type, subtype] = split_content_type(content_type); type == "image") {
       QPixmap p;
       p.loadFromData(reply->readAll(), subtype.c_str());
-      image_provider_->add_pixmap(QString::fromStdString(media_id), std::move(p));
+      image_provider_->add_pixmap(QString::fromStdString(std::string{id}), std::move(p));
     }
   }
 }
@@ -395,7 +438,7 @@ void matrix::AccessManager::handle_room_members(Room* room, QNetworkReply* reply
         }
         if (!avatar_url.is_null()) {
           user->set_avatar_url(avatar_url);
-          request_thumbnail(user->avatar_url(), 64, 64);
+          download_thumbnail(user->avatar_url(), 64, 64);
         }
         room->add_member(user);
       }
@@ -453,24 +496,25 @@ void matrix::AccessManager::sync_room(Room* room, const json& timeline)
 
       if (message.type == matrix::MessageType::Image) {
         message.url = content["url"].get<std::string>();
-        std::regex rx{R"(mxc://.+/(.+))"};
-        std::smatch m;
-        if (std::regex_search(message.url, m, rx))
-          message.image_id = m[1];
-        // Delay message until data was retrieved
-        auto* r = request_thumbnail(message.url, 512, 512);
-        connect(r, &QNetworkReply::finished, r, [this, room, m{std::move(message)}]() mutable {
-          if (room == room_model_->current_room())
-            room_model_->add_message(std::move(m));
-          else
-            room->add_message(std::move(m));
-        });
+        message.content_loading = true;
       }
-      else {
-        if (room == room_model_->current_room())
-          room_model_->add_message(std::move(message));
-        else
-          room->add_message(std::move(message));
+
+      if (room == room_model_->current_room())
+        room_model_->add_message(std::move(message));
+      else
+        room->add_message(std::move(message));
+
+      if (auto* m = room->last_message(); m && m->type == matrix::MessageType::Image) {
+        if (auto* r = request_thumbnail(m->url, 512, 512); r) {
+          connect(r, &QNetworkReply::finished, r, [this, r, m]{
+            auto id = std::get<1>(split_mxc(m->url));
+            handle_content(std::string{id}, r);
+            m->image_id = id;
+            m->content_loading = false;
+            room_model_->data_changed(m);
+            r->deleteLater();
+          });
+        }
       }
     }
   }

@@ -12,6 +12,7 @@ Page {
 
     ListView {
       id: chatView
+      ScrollBar.vertical: ScrollBar {}
       Layout.fillHeight: true
       Layout.fillWidth: true
       Layout.leftMargin: 12
@@ -29,7 +30,7 @@ Page {
 
         id: messageRow
         anchors.right: sentByMe ? parent.right : undefined
-        //width: parent.width
+        height: Math.max(userImage.height, speechBubble.height)
         spacing: 12
 
         Image {
@@ -44,6 +45,7 @@ Page {
         }
 
         Rectangle {
+          id: speechBubble
           width: message_type == 3 ? messageImage.implicitWidth + 16 : Math.min(messageText.implicitWidth + 16,
                  chatView.width - (!sentByMe ? userImage.width + 12 : 0))
           height: message_type == 3 ? messageImage.implicitHeight + 16 : messageText.implicitHeight + 16
@@ -105,8 +107,6 @@ Page {
             id: messageImage
             anchors.fill: parent
             anchors.margins: 8
-            //width: 256
-            //height: 256
             smooth: true
             asynchronous: true
             source: "image://matrix_media/" + image_id

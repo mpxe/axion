@@ -49,6 +49,7 @@ QVariant RoomModel::data(const QModelIndex& index, int role) const
       case RoomRole::Timestamp: return m->timestamp;
       case RoomRole::TransmitConfirmed: return m->transmit_confirmed;
       case RoomRole::TransmitFailed: return m->transmit_failed;
+      case RoomRole::ContentLoading: return m->content_loading;
     }
   }
 
@@ -70,6 +71,7 @@ QHash<int, QByteArray> RoomModel::roleNames() const
   names[static_cast<int>(RoomRole::Timestamp)] = "timestamp";
   names[static_cast<int>(RoomRole::TransmitConfirmed)] = "transmit_confirmed";
   names[static_cast<int>(RoomRole::TransmitFailed)] = "transmit_failed";
+  names[static_cast<int>(RoomRole::ContentLoading)] = "content_loading";
   return names;
 }
 

@@ -18,8 +18,8 @@ class ImageProvider : public QQuickImageProvider
 public:
   ImageProvider();
   QPixmap requestPixmap(const QString& id, QSize* size, const QSize& requested_size);
-
-  void add_pixmap(const QString& id, QPixmap&& pixmap) { images_.insert(id, std::move(pixmap)); }
+  void add_pixmap(const QString&& id, QPixmap&& pixmap) {
+      images_.insert(std::move(id), std::move(pixmap)); }
 
 private:
   QHash<QString, QPixmap> images_;

@@ -73,8 +73,12 @@ private:
   inline QNetworkReply* post(std::string&& url, std::string&& data);
   inline QNetworkReply* get(std::string&& url);
 
-  void request_media(const std::string& mxc_url);
-  QNetworkReply* request_thumbnail(const std::string& mxc_url, int width, int height);
+  QNetworkReply* request_media(std::string_view server, std::string_view id);
+  QNetworkReply* request_media(std::string&& server, std::string&& id);
+  QNetworkReply* request_media(std::string_view mxc_url);
+  QNetworkReply* request_thumbnail(std::string_view server, std::string_view id, int width, int height);
+  QNetworkReply* request_thumbnail(std::string&& server, std::string&& id, int width, int height);
+  QNetworkReply* request_thumbnail(std::string_view mxc_url, int width, int height);
 
   void request_init_sync();
   void request_long_sync();
@@ -82,13 +86,14 @@ private:
   void request_room_state(Room* room, RoomState state);
   void request_room_members(Room* room);
 
-  void handle_media(const std::string& media_id, QNetworkReply* reply);
+  void handle_content(std::string_view id, QNetworkReply* reply);
   void handle_login(QNetworkReply* reply);
   void handle_sync(QNetworkReply* reply);
   void handle_user_profile(User* user, QNetworkReply* reply);
   void handle_room_state(Room* room, RoomState state, QNetworkReply* reply);
   void handle_room_members(Room* room, QNetworkReply* reply);
 
+  void download_thumbnail(std::string_view mxc_url, int width, int height);
   void sync_rooms(const nlohmann::json& rooms);
   void sync_room(Room* room, const nlohmann::json& timeline);
 
