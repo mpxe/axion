@@ -11,12 +11,12 @@ namespace util
 {
 
 
-bool starts_with(std::string_view text, std::string_view token)
+bool starts_with(std::string_view sv, std::string_view token)
 {
-  if (text.empty() || token.empty() || token.size() > text.size())
+  if (sv.empty() || token.empty() || token.size() > sv.size())
     return false;
 
-  auto a = std::begin(text);
+  auto a = std::begin(sv);
   auto b = std::begin(token);
   auto last = std::end(token);
 
@@ -29,6 +29,17 @@ bool starts_with(std::string_view text, std::string_view token)
     return true;
 
   return false;
+}
+
+
+inline std::tuple<std::string_view, std::string_view> split_first(std::string_view sv, char token)
+{
+  auto i = sv.find(token);
+  if (i != sv.npos) {
+    return {sv.substr(0, i), sv.substr(i+1)};
+  }
+
+  return {sv, std::string_view{}};
 }
 
 
