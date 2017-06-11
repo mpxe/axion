@@ -148,27 +148,36 @@ void matrix::AccessManager::send_message(const QString& room_id, const QString& 
     {"body", message.text}
   };
 
-  auto* m = room_model_->add_message(std::move(message));
-  auto* r = put(client_url_base_ + url, data.dump());
+  // Add unconfirmed message (local echo)
+  auto* local_message = room_model_->add_message(std::move(message));
 
-  connect(r, &QNetworkReply::finished, r, [this, m, r]{
+  // Transmit message
+  auto* r = put(client_url_base_ + url, data.dump());
+  connect(r, &QNetworkReply::finished, r, [this, local_message, r]{
     if (is_valid(r)) {
       auto data = json::parse(r->readAll().toStdString());
       auto event_id = data["event_id"].get<std::string>();
-      // Remote echo may have already arrived before request finished (see r0.2.0 spec local echo)
-      if (auto it = std::find(std::begin(confirmed_events_), std::end(confirmed_events_), event_id);
-          it != std::end(confirmed_events_)) {
-        confirmed_events_.erase(it);
-        m->transmit_confirmed = true;
-        room_model_->data_changed(m);
+
+      // Remote echo may have arrived before request finished (see matrix spec r0.2.0, 11.2.2.2)
+      if (auto* room = client_->room(local_message->room_id); room) {
+        if (auto* remote_message = room->message(event_id); remote_message) {
+          local_message->transmit_confirmed = true;
+          remote_message->deleted = true;
+          if (room == room_model_->current_room()) {
+            room_model_->data_changed(local_message);
+            room_model_->data_changed(remote_message);
+          }
+        }
       }
-      else {
-        unconfirmed_messages_.insert(std::pair{event_id, m});
+
+      if (!local_message->transmit_confirmed) {
+        unconfirmed_messages_.insert(std::pair{std::move(event_id), local_message});
       }
     }
     else {
-      m->transmit_failed = true;
-      room_model_->data_changed(m);
+      local_message->transmit_failed = true;
+      if (room_model_->current_room()->id() == local_message->room_id)
+        room_model_->data_changed(local_message);
     }
     r->deleteLater();
   });
@@ -400,27 +409,27 @@ void matrix::AccessManager::sync_room(Room* room, const json& timeline)
   for (const auto& event : timeline["events"]) {
     const auto& content = event["content"];
     const auto sender = event["sender"].get<std::string>();
+
+    // Confirm transmitted messages by comparing local with remote echo
     if (sender == client_->user_id()) {
-      // Confirm transmitted messages by comparing local with remote echo from stream
       auto it = unconfirmed_messages_.find(event["event_id"]);
       if (it != std::end(unconfirmed_messages_)) {
         auto* m = it->second;
         unconfirmed_messages_.erase(it);
         m->transmit_confirmed = true;
         room_model_->data_changed(m);
-      }
-      else {
-        // Remote echo arrived before original send request finished (see r0.2.0 spec local echo)
-        confirmed_events_.push_back(event["event_id"]);
+        continue;
       }
     }
-    else if (event["type"] == "m.room.message") {
+
+    if (event["type"] == "m.room.message") {
       Message message;
       message.event_id = event["event_id"].get<std::string>();
       message.room_id = room->id();
       message.user_id = std::move(sender);
       message.type = as_msgtype(content["msgtype"].get<std::string>());
       message.text = content["body"].get<std::string>();
+      message.transmit_confirmed = true;
 
       if (message.type == matrix::MessageType::Image) {
         message.url = content["url"].get<std::string>();

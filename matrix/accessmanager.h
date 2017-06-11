@@ -110,7 +110,6 @@ private:
   MemberListModel* member_list_model_;
 
   std::map<std::string, Message*> unconfirmed_messages_;
-  std::vector<std::string> confirmed_events_;
 };
 
 
