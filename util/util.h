@@ -39,7 +39,7 @@ inline std::tuple<std::string_view, std::string_view> split_first(std::string_vi
     return {sv.substr(0, i), sv.substr(i+1)};
   }
 
-  return {sv, std::string_view{}};
+  return {sv, {}};
 }
 
 

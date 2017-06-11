@@ -14,8 +14,7 @@ class QNetworkReply;
 
 #include "ext/json.hpp"
 
-namespace matrix { class ImageProvider; class Client; class User; class Room; class Message; }
-
+#include "matrix/room.h"
 class RoomModel;
 class RoomListModel;
 class MemberListModel;
@@ -24,6 +23,12 @@ class MemberListModel;
 
 namespace matrix
 {
+
+
+class ImageProvider;
+class Client;
+class User;
+class Message;
 
 
 enum class LoginResponse
@@ -39,12 +44,6 @@ enum class RoomStateResponse
 {
   NotAMember = 403,
   UnknownState = 404
-};
-
-
-enum class RoomState
-{
-  Name
 };
 
 

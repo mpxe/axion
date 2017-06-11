@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <regex>
 
+#include "user.h"
+
 
 std::size_t matrix::Room::index_of(const matrix::Message* message) const
 {

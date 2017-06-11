@@ -56,64 +56,6 @@ inline std::tuple<std::string, std::string> split_mxc(std::string_view mxc_url)
 }
 
 
-inline std::tuple<std::string, std::string> split_content_type(std::string_view content_type)
-{
-  static const std::regex rx{R"((.+)/(.+))"};  // Type/subtype (see RFC 1521, 822)
-  std::match_results<std::string_view::const_iterator> m;
-  if (std::regex_search(std::begin(content_type), std::end(content_type), m, rx)) {
-    return {m[1], m[2]};
-  }
-  return {"", ""};
-}
-
-
-inline std::string as_string(matrix::RoomState state)
-{
-  switch (state) {
-    case matrix::RoomState::Name: return "m.room.name"s;
-    default: return ""s;
-  }
-}
-
-
-inline matrix::MessageType as_msgtype(std::string_view sv)
-{
-  static const std::map<std::string, matrix::MessageType, std::less<>> types{
-    {"m.text", matrix::MessageType::Text},
-    {"m.emote", matrix::MessageType::Emote},
-    {"m.notice", matrix::MessageType::Notice},
-    {"m.image", matrix::MessageType::Image},
-    {"m.file", matrix::MessageType::File},
-    {"m.location", matrix::MessageType::Location},
-    {"m.video", matrix::MessageType::Video},
-    {"m.audio", matrix::MessageType::Audio}
-  };
-  const auto it = types.find(sv);
-  if (it != std::end(types))
-    return it->second;
-  return matrix::MessageType::Unknown;
-}
-
-
-inline std::string as_string(matrix::MessageType type)
-{
-  static const std::map<matrix::MessageType, std::string> types{
-    {matrix::MessageType::Text, "m.text"},
-    {matrix::MessageType::Emote, "m.emote"},
-    {matrix::MessageType::Notice, "m.notice"},
-    {matrix::MessageType::Image, "m.image"},
-    {matrix::MessageType::File, "m.file"},
-    {matrix::MessageType::Location, "m.location"},
-    {matrix::MessageType::Video, "m.video"},
-    {matrix::MessageType::Audio, "m.audio"}
-  };
-  const auto it = types.find(type);
-  if (it != std::end(types))
-    return it->second;
-  return "m.text";
-}
-
-
 }  // Anonymous namespace
 
 
@@ -202,7 +144,7 @@ void matrix::AccessManager::send_message(const QString& room_id, const QString& 
   auto url = "/rooms/{}/send/m.room.message/{}?access_token={}"_format(message.room_id,
       ++transaction_id_, access_token_);
   json data = {
-    {"msgtype", as_string(message.type)},
+    {"msgtype", as_mxstring(message.type)},
     {"body", message.text}
   };
 
@@ -291,7 +233,7 @@ void matrix::AccessManager::request_user_profile(User* user)
 void matrix::AccessManager::request_room_state(Room* room, RoomState state)
 {
   auto* r = get(client_url_base_ + "/rooms/{}/state/{}?access_token={}"_format(room->id(),
-      as_string(state), access_token_));
+      as_mxstring(state), access_token_));
   connect(r, &QNetworkReply::finished, r, [=]{ handle_room_state(room, state, r); r->deleteLater(); });
 }
 
@@ -318,9 +260,9 @@ void matrix::AccessManager::handle_content(std::string_view id, QNetworkReply* r
 {
   if (is_valid(reply)) {
     auto content_type = reply->header(QNetworkRequest::ContentTypeHeader).toString().toStdString();
-    if (auto [type, subtype] = split_content_type(content_type); type == "image") {
+    if (auto [type, subtype] = util::split_first(content_type, '/'); type == "image") {
       QPixmap p;
-      p.loadFromData(reply->readAll(), subtype.c_str());
+      p.loadFromData(reply->readAll(), std::string{subtype}.c_str());
       image_provider_->add_pixmap(QString::fromStdString(std::string{id}), std::move(p));
     }
   }

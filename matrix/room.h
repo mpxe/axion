@@ -8,11 +8,14 @@
 #include <deque>
 
 #include "message.h"
-#include "user.h"
 
 
 namespace matrix
 {
+
+
+class User;
+enum class RoomState { Name };
 
 
 class Room
@@ -48,6 +51,16 @@ private:
   std::deque<Message> messages_;
   std::vector<User*> members_;
 };
+
+
+inline std::string as_mxstring(RoomState state)
+{
+  using namespace std::string_literals;
+  switch (state) {
+    case RoomState::Name: return "m.room.name"s;
+    default: return ""s;
+  }
+}
 
 
 }  // namespace matrix
