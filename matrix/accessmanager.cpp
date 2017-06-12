@@ -409,10 +409,11 @@ void matrix::AccessManager::sync_room(Room* room, const json& timeline)
   for (const auto& event : timeline["events"]) {
     const auto& content = event["content"];
     const auto sender = event["sender"].get<std::string>();
+    const auto event_id = event["event_id"].get<std::string>();
 
     // Confirm transmitted messages by comparing local with remote echo
     if (sender == client_->user_id()) {
-      auto it = unconfirmed_messages_.find(event["event_id"]);
+      auto it = unconfirmed_messages_.find(event_id);
       if (it != std::end(unconfirmed_messages_)) {
         auto* m = it->second;
         unconfirmed_messages_.erase(it);
@@ -424,7 +425,7 @@ void matrix::AccessManager::sync_room(Room* room, const json& timeline)
 
     if (event["type"] == "m.room.message") {
       Message message;
-      message.event_id = event["event_id"].get<std::string>();
+      message.event_id = std::move(event_id);
       message.room_id = room->id();
       message.user_id = std::move(sender);
       message.type = as_msgtype(content["msgtype"].get<std::string>());
