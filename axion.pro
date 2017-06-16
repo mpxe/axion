@@ -11,7 +11,8 @@ SOURCES += main.cpp \
     models/roomlistmodel.cpp \
     models/roommodel.cpp \
     ext/fmt/fmtlib.cpp \
-    matrix/imageprovider.cpp
+    matrix/imageprovider.cpp \
+    axion/configuration.cpp
 
 RESOURCES += qml.qrc
 
@@ -51,4 +52,5 @@ HEADERS += \
     models/roommodel.h \
     ext/fmt/fmtlib.h \
     matrix/imageprovider.h \
-    util/util.h
+    util/util.h \
+    axion/configuration.h

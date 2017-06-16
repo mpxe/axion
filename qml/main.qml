@@ -7,8 +7,8 @@ import QtQuick.Layouts 1.3
 
 ApplicationWindow {
   visible: true
-  width: 800
-  height: 768
+  width: 768
+  height: 800
   title: qsTr("Axion")
 
   header: ToolBar {
@@ -16,7 +16,7 @@ ApplicationWindow {
     property string prevState: "login"
     property string room_name: ""
     state: "login"
-    height: 64
+    height: config.iconSize * 2;
     background: Rectangle {
       color: "#404244"
     }
@@ -24,6 +24,7 @@ ApplicationWindow {
     RowLayout {
       anchors.right: parent.right
       width: parent.width
+      spacing: 0
 
       MenuBarButton {
         id: roomListButton
@@ -48,11 +49,11 @@ ApplicationWindow {
         id: titleLabel
         text: "Login"
         font.family: "Segoe UI"
-        font.pixelSize: 32
+        font.pixelSize: config.iconSize;
         font.bold: true
-        Layout.topMargin: 6
-        Layout.leftMargin: 12
-        Layout.alignment: Qt.AlignTop
+        Layout.topMargin: font.pixelSize / 4  // AlignHCenter looks bad
+        Layout.leftMargin: font.pixelSize / 4
+        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
       }
 
       Item { Layout.fillWidth: true }

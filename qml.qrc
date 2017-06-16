@@ -10,6 +10,7 @@
         <file>qml/Settings.qml</file>
         <file>qtquickcontrols2.conf</file>
         <file>qml/About.qml</file>
+        <file>qml/InputPane.qml</file>
     </qresource>
     <qresource prefix="/img">
         <file>res/img/tool_icons/th-list.png</file>

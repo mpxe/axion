@@ -3,6 +3,7 @@
 #include <QtQml>
 #include <QIcon>
 
+#include "axion/configuration.h"
 #include "matrix/accessmanager.h"
 #include "matrix/imageprovider.h"
 #include "matrix/client.h"
@@ -76,6 +77,8 @@ int main(int argc, char *argv[])
   QGuiApplication app(argc, argv);
   app.setWindowIcon(QIcon{"qrc:/img/res/img/icon.png"});
 
+  axion::Configuration config;
+
   matrix::Client client{};
   add_dummy_content(client);
 
@@ -88,16 +91,17 @@ int main(int argc, char *argv[])
   // Engine takes ownership
   matrix::ImageProvider* image_provider = new matrix::ImageProvider{};
 
-  matrix::AccessManager matrix{"http://matrix.org", &client, image_provider,
+  matrix::AccessManager matrix{config, "http://matrix.org", &client, image_provider,
       &room_model, &room_list_model, &member_list_model};
 
   QQmlApplicationEngine engine;
   engine.addImageProvider(QLatin1String("matrix_media"), image_provider);
-  engine.load(QUrl(QLatin1String("qrc:/qml/main.qml")));
+  engine.rootContext()->setContextProperty("config", &config);
   engine.rootContext()->setContextProperty("matrix", &matrix);
   engine.rootContext()->setContextProperty("roomModel", &room_model);
   engine.rootContext()->setContextProperty("roomListModel", &room_list_model);
   engine.rootContext()->setContextProperty("memberListModel", &member_list_model);
+  engine.load(QUrl(QLatin1String("qrc:/qml/main.qml")));
 
   auto* login_page = engine.rootObjects()[0]->findChild<QObject*>("loginPage");
 

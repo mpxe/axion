@@ -59,11 +59,22 @@ inline std::tuple<std::string, std::string> split_mxc(std::string_view mxc_url)
 }  // Anonymous namespace
 
 
-matrix::AccessManager::AccessManager(std::string&& server, Client* client, ImageProvider* image_provider,
-    RoomModel* room_model, RoomListModel* room_list_model, MemberListModel* member_list_model)
-    : server_{std::move(server)}, client_url_base_{server_ + "/_matrix/client/r0"},
-      network_{new QNetworkAccessManager{this}}, client_{client}, image_provider_{image_provider},
-      room_model_{room_model}, room_list_model_{room_list_model}, member_list_model_{member_list_model}
+matrix::AccessManager::AccessManager(axion::Configuration& config,
+    std::string&& server,
+    Client* client,
+    ImageProvider* image_provider,
+    RoomModel* room_model,
+    RoomListModel* room_list_model,
+    MemberListModel* member_list_model)
+    : config_{config},
+      server_{std::move(server)},
+      client_url_base_{server_ + "/_matrix/client/r0"},
+      network_{new QNetworkAccessManager{this}},
+      client_{client},
+      image_provider_{image_provider},
+      room_model_{room_model},
+      room_list_model_{room_list_model},
+      member_list_model_{member_list_model}
 {
   // Establish connection to reduce latency of first http request
   network_->connectToHost(QString::fromStdString(server_));
@@ -254,26 +265,22 @@ void matrix::AccessManager::request_room_members(Room* room)
 }
 
 
-void matrix::AccessManager::download_thumbnail(std::string_view mxc_url, int width, int height)
+void matrix::AccessManager::request_content(Message* message)
 {
-  if (auto* r = request_thumbnail(mxc_url, width, height); r) {
-    connect(r, &QNetworkReply::finished, r, [=]{
-      handle_content(std::get<1>(split_mxc(mxc_url)), r);
-      r->deleteLater();
-    });
-  }
-}
-
-
-void matrix::AccessManager::handle_content(std::string_view id, QNetworkReply* reply)
-{
-  if (is_valid(reply)) {
-    auto content_type = reply->header(QNetworkRequest::ContentTypeHeader).toString().toStdString();
-    if (auto [type, subtype] = util::split_first(content_type, '/'); type == "image") {
-      QPixmap p;
-      p.loadFromData(reply->readAll(), std::string{subtype}.c_str());
-      image_provider_->add_pixmap(QString::fromStdString(std::string{id}), std::move(p));
+  switch (message->type) {
+    case matrix::MessageType::Image: {
+      auto image_size = config_.image_size();
+      if (auto* r = request_thumbnail(message->url, image_size, image_size); r) {
+        connect(r, &QNetworkReply::finished, r, [this, r, message]{
+          message->image_id = std::get<1>(split_mxc(message->url));
+          handle_content(message->image_id, r);
+          message->content_loading = false;
+          room_model_->data_changed(message);
+          r->deleteLater();
+        });
+      }
     }
+    default: break;
   }
 }
 
@@ -375,11 +382,35 @@ void matrix::AccessManager::handle_room_members(Room* room, QNetworkReply* reply
         }
         if (!avatar_url.is_null()) {
           user->set_avatar_url(avatar_url);
-          download_thumbnail(user->avatar_url(), 64, 64);
+          download_thumbnail(user->avatar_url(), config_.avatar_size(), config_.avatar_size());
         }
         room->add_member(user);
       }
     }
+  }
+}
+
+
+void matrix::AccessManager::handle_content(std::string_view id, QNetworkReply* reply)
+{
+  if (is_valid(reply)) {
+    auto content_type = reply->header(QNetworkRequest::ContentTypeHeader).toString().toStdString();
+    if (auto [type, subtype] = util::split_first(content_type, '/'); type == "image") {
+      QPixmap p;
+      p.loadFromData(reply->readAll(), std::string{subtype}.c_str());
+      image_provider_->add_pixmap(QString::fromStdString(std::string{id}), std::move(p));
+    }
+  }
+}
+
+
+void matrix::AccessManager::download_thumbnail(std::string_view mxc_url, int width, int height)
+{
+  if (auto* r = request_thumbnail(mxc_url, width, height); r) {
+    connect(r, &QNetworkReply::finished, r, [=]{
+      handle_content(std::get<1>(split_mxc(mxc_url)), r);
+      r->deleteLater();
+    });
   }
 }
 
@@ -407,53 +438,58 @@ void matrix::AccessManager::sync_rooms(const json& rooms)
 void matrix::AccessManager::sync_room(Room* room, const json& timeline)
 {
   for (const auto& event : timeline["events"]) {
-    const auto& content = event["content"];
-    const auto sender = event["sender"].get<std::string>();
-    const auto event_id = event["event_id"].get<std::string>();
+    auto sender_id = event["sender"].get<std::string>();
+    auto event_id = event["event_id"].get<std::string>();
 
-    // Confirm transmitted messages by comparing local with remote echo
-    if (sender == client_->user_id()) {
-      auto it = unconfirmed_messages_.find(event_id);
-      if (it != std::end(unconfirmed_messages_)) {
-        auto* m = it->second;
-        unconfirmed_messages_.erase(it);
-        m->transmit_confirmed = true;
-        room_model_->data_changed(m);
-        continue;
-      }
-    }
+    // Confirm transmitted events by comparing local with received remote echo
+    bool confirmed = sender_id == client_->user_id() && confirm_event(event_id);
 
-    if (event["type"] == "m.room.message") {
-      Message message;
-      message.event_id = std::move(event_id);
-      message.room_id = room->id();
-      message.user_id = std::move(sender);
-      message.type = as_msgtype(content["msgtype"].get<std::string>());
-      message.text = content["body"].get<std::string>();
-      message.transmit_confirmed = true;
-
-      if (message.type == matrix::MessageType::Image) {
-        message.url = content["url"].get<std::string>();
-        message.content_loading = true;
-      }
-
-      if (room == room_model_->current_room())
-        room_model_->add_message(std::move(message));
-      else
-        room->add_message(std::move(message));
-
-      if (auto* m = room->last_message(); m && m->type == matrix::MessageType::Image) {
-        if (auto* r = request_thumbnail(m->url, 512, 512); r) {
-          connect(r, &QNetworkReply::finished, r, [this, r, m]{
-            auto id = std::get<1>(split_mxc(m->url));
-            handle_content(std::string{id}, r);
-            m->image_id = id;
-            m->content_loading = false;
-            room_model_->data_changed(m);
-            r->deleteLater();
-          });
-        }
-      }
+    if (!confirmed && event["type"] == "m.room.message") {
+      add_message(room, std::move(event_id), std::move(sender_id), event["content"]);
     }
   }
+}
+
+
+bool matrix::AccessManager::confirm_event(std::string_view event_id)
+{
+  auto it = unconfirmed_messages_.find(event_id);
+  if (it != std::end(unconfirmed_messages_)) {
+    auto* m = it->second;
+    unconfirmed_messages_.erase(it);
+    m->transmit_confirmed = true;
+    room_model_->data_changed(m);
+    return true;
+  }
+
+  return false;
+}
+
+
+void matrix::AccessManager::add_message(Room* room, std::string&& event_id, std::string&& sender_id,
+    const json& content)
+{
+  if (content.empty())
+    return;
+
+  Message message;
+  message.event_id = std::move(event_id);
+  message.room_id = room->id();
+  message.user_id = std::move(sender_id);
+  message.type = as_msgtype(content["msgtype"].get<std::string>());
+  message.text = content["body"].get<std::string>();
+  message.transmit_confirmed = true;
+
+  if (message.type == matrix::MessageType::Image) {
+    message.url = content["url"].get<std::string>();
+    message.content_loading = true;
+  }
+
+  if (room == room_model_->current_room())
+    room_model_->add_message(std::move(message));
+  else
+    room->add_message(std::move(message));
+
+  if (auto* m = room->last_message(); m && m->content_loading)
+    request_content(m);
 }

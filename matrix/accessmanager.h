@@ -14,6 +14,7 @@ class QNetworkReply;
 
 #include "ext/json.hpp"
 
+#include "axion/configuration.h"
 #include "matrix/room.h"
 class RoomModel;
 class RoomListModel;
@@ -52,8 +53,9 @@ class AccessManager : public QObject
   Q_OBJECT
 
 public:
-  AccessManager(std::string&& server, Client* client, ImageProvider* image_provider,
-      RoomModel* room_model, RoomListModel* room_list_model, MemberListModel* member_list_model);
+  AccessManager(axion::Configuration& config, std::string&& server, Client* client,
+      ImageProvider* image_provider, RoomModel* room_model, RoomListModel* room_list_model,
+      MemberListModel* member_list_model);
   ~AccessManager();
 
 signals:
@@ -82,18 +84,23 @@ private:
   void request_user_profile(User* user);
   void request_room_state(Room* room, RoomState state);
   void request_room_members(Room* room);
+  void request_content(Message* message);
 
-  void handle_content(std::string_view id, QNetworkReply* reply);
   void handle_login(QNetworkReply* reply);
   void handle_sync(QNetworkReply* reply);
   void handle_user_profile(User* user, QNetworkReply* reply);
   void handle_room_state(Room* room, RoomState state, QNetworkReply* reply);
   void handle_room_members(Room* room, QNetworkReply* reply);
+  void handle_content(std::string_view id, QNetworkReply* reply);
 
   void download_thumbnail(std::string_view mxc_url, int width, int height);
   void sync_rooms(const nlohmann::json& rooms);
   void sync_room(Room* room, const nlohmann::json& timeline);
+  bool confirm_event(std::string_view event_id);
+  void add_message(Room* room, std::string&& event_id, std::string&& sender_id,
+      const nlohmann::json& content);
 
+  axion::Configuration& config_;
   const std::string server_;
   std::string home_server_;
   std::string client_url_base_;
@@ -109,7 +116,7 @@ private:
   RoomListModel* room_list_model_;
   MemberListModel* member_list_model_;
 
-  std::map<std::string, Message*> unconfirmed_messages_;
+  std::map<std::string, Message*, std::less<>> unconfirmed_messages_;
 };
 
 

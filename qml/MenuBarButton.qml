@@ -3,7 +3,7 @@ import QtQuick.Controls 2.1
 
 
 ToolButton {
-  property int size: 64
+  property int size: config.iconSize * 2
   property string icon: ""
   implicitHeight: size
   implicitWidth: size

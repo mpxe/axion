@@ -1,7 +1,5 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.1
-import QtQuick.Controls.Material 2.1
-import QtQuick.Controls.Universal 2.1
 import QtQuick.Layouts 1.3
 
 
@@ -10,48 +8,22 @@ Page {
     anchors.fill: parent
     spacing: 0
 
-//    property int totalContentHeight: 100
-
-//    ScrollView {
-
-//    Rectangle {
-//      id: chatView2
-//      color: "transparent"
-
-
     ListView {
       id: chatView
-//      ScrollBar.vertical: ScrollBar {}
       Layout.fillHeight: true
       Layout.fillWidth: true
       Layout.leftMargin: 12
       Layout.rightMargin: 12
-//      Layout.bottomMargin: 12
       displayMarginBeginning: 48
       displayMarginEnd: 48
       verticalLayoutDirection: ListView.BottomToTop
       spacing: 12
-      contentY: 10000
       model: roomModel
-
-//      onCountChanged: {
-//        console.log("start")
-//        for(var child in chatView.contentItem.children) {
-//          console.log(chatView.contentItem.children[child].height)
-//        }
-//        console.log("end")
-//      }
-
-//      onCountChanged: { chatView2.height = totalContentHeight }
-
-//      onContentYChanged: { console.log(contentHeight)}
 
       delegate: Row {
         readonly property bool sentByMe: user_id === roomModel.user
         readonly property bool dummyRoom: roomModel.room_name === "music" ||
             roomModel.room_name === "physics"
-
-//       Component.onCompleted: { totalContentHeight = totalContentHeight + height}
 
         id: messageRow
         anchors.right: sentByMe ? parent.right : undefined
@@ -60,8 +32,8 @@ Page {
 
         Image {
           id: userImage
-          width: 64
-          height: 64
+          width: config.avatarSize
+          height: config.avatarSize
           smooth: true
           asynchronous: true
           source: !sentByMe ? dummyRoom ? "qrc:/img/res/img/" + account_name + ".png" :
@@ -122,7 +94,7 @@ Page {
             font.family: "Segoe UI"
             font.bold: false
             font.italic: false
-            font.pixelSize: 18
+            font.pixelSize: config.textSize
             wrapMode: Label.Wrap
             color: "white"
             visible: message_type != 3
@@ -141,65 +113,7 @@ Page {
       }
     }
 
-//    }  // Rectangle
-//    }  // Scrollview
-
-    Pane {
-      id: inputPane
-      Layout.fillWidth: true
-//      background: Rectangle {
-//        color: "#404244"
-//      }
-
-      function sendMessage() {
-        matrix.send_message(roomModel.room, messageField.text);
-        messageField.text = "";
-      }
-
-      RowLayout {
-        width: parent.width
-        spacing: 6
-
-        Rectangle {
-          Layout.fillWidth: true
-          Layout.rightMargin: 6
-          radius: 8
-          height: messageField.implicitHeight
-          color: "teal"
-
-          TextArea {
-            id: messageField
-            anchors.fill: parent
-            anchors.margins: 0
-            color: "white"
-            font.family: "Segoe UI"
-            font.bold: false
-            font.italic: false
-            font.pixelSize: 18
-            background: Rectangle {
-              color: "transparent"
-//              border.color: control.enabled ? "#21be2b" : "transparent"
-            }
-            placeholderText: "Say something"
-            wrapMode: TextArea.Wrap
-            Keys.onPressed: {
-              if (event.key === Qt.Key_Return) {
-                inputPane.sendMessage();
-                event.accepted = true;
-              }
-            }
-          }
-        }
-
-        Button {
-          id: sendButton
-          text: "Send"
-          Material.background: Material.LightBlue
-          Universal.background: Material.LightBlue
-          enabled: messageField.length > 0
-          onClicked: { inputPane.sendMessage(); }
-        }
-      }
+    InputPane {
     }
   }
 }
