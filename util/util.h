@@ -34,8 +34,7 @@ bool starts_with(std::string_view sv, std::string_view token)
 
 inline std::tuple<std::string_view, std::string_view> split_first(std::string_view sv, char token)
 {
-  auto i = sv.find(token);
-  if (i != sv.npos) {
+  if (auto i = sv.find(token); i != sv.npos) {
     return {sv.substr(0, i), sv.substr(i+1)};
   }
 
