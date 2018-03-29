@@ -23,21 +23,14 @@ void add_dummy_content(matrix::Client& client)
 {
   client.add_self(matrix::User{"@self:example.com", u8"ಠ_ಠ"});
   matrix::Room music{"!Xq3620DUiqCaoxq:example.com"};
-  matrix::Room physics{"!636q39766251:example.com"};
   music.set_name("music");
-  physics.set_name("physics");
 
   matrix::User miku{"@miku:example.com", u8"初音ミク"};
   matrix::User yuzuru{"@yuzuru:example.com", "yuzuru"};
-  matrix::User krauss{"@krauss:example.com", "Lawrence Krauss"};
-  matrix::User smolin{"@smolin:example.com", "Lee Smolin"};
 
   music.add_member(client.self());
   music.add_member(client.add_user(matrix::User{miku}));
   music.add_member(client.add_user(matrix::User{yuzuru}));
-  physics.add_member(client.self());
-  physics.add_member(client.add_user(matrix::User{krauss}));
-  physics.add_member(client.add_user(matrix::User{smolin}));
 
   matrix::Message message;
   message.room_id = music.id();
@@ -50,19 +43,7 @@ void add_dummy_content(matrix::Client& client)
   message.text = "kawaii desu!!~~~";
   music.add_message(matrix::Message{message});
 
-  message.room_id = physics.id();
-  message.user_id = smolin.id();
-  message.text = "Whatever is happening on very small scales near the horizon of the black hole "
-      "will be enlarged by the effect whereby the wavelengths of light are stretched as the light "
-      "climbs up to us. This means that jf we can observe light coming from very close to the "
-      "horizon of a black hole, we may be able to see the quantum structure of space itself.";
-  physics.add_message(matrix::Message{message});
-  message.user_id = krauss.id();
-  message.text = "If you have nothing in quantum mechanics, you will always have something.";
-  physics.add_message(matrix::Message{message});
-
   client.add_room(std::move(music));
-  client.add_room(std::move(physics));
 }
 
 
@@ -85,8 +66,8 @@ int main(int argc, char *argv[])
   RoomModel room_model{&client};
   RoomListModel room_list_model{&client};
   MemberListModel member_list_model{&client};
-  room_model.set_room("!636q39766251:example.com");
-  member_list_model.set_room("!636q39766251:example.com");
+  room_model.set_room("!Xq3620DUiqCaoxq:example.com");
+  member_list_model.set_room("!Xq3620DUiqCaoxq:example.com");
 
   // Engine takes ownership
   matrix::ImageProvider* image_provider = new matrix::ImageProvider{};
