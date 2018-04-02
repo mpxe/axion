@@ -4,7 +4,7 @@
 [![Qt 5.8](https://img.shields.io/badge/Qt-5.8-brightgreen.svg)](http://https://www.qt.io)
 [![QML](https://img.shields.io/badge/GUI-QML-brightgreen.svg)](http://doc.qt.io/qt-5/qtqml-index.html)
 
-<img src="https://github.com/mpxe/axion/blob/master/res/img/icon.png" alt="axion logo" width="150">
+<img src="https://github.com/mwkpe/axion/blob/master/res/img/icon.png" alt="axion logo" width="150">
 
 A(n attempt at a) [matrix](http://matrix.org) client
 
