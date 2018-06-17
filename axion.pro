@@ -1,4 +1,4 @@
-QT += qml quick quickcontrols2
+QT += quick
 
 CONFIG += c++1z
 

@@ -1,10 +1,10 @@
-import QtQuick 2.7
-import QtQuick.Controls 2.1
+import QtQuick 2.11
+import QtQuick.Controls 2.4
 
 
 ToolButton {
   property int size: config.iconSize * 2
-  property string icon: ""
+  property string iconName: ""
   implicitHeight: size
   implicitWidth: size
 
@@ -17,7 +17,7 @@ ToolButton {
 
       Image {
         anchors.fill: parent
-        source: "qrc:/img/res/img/tool_icons/" + icon + ".png"
+        source: "qrc:/img/res/img/tool_icons/" + iconName + ".png"
       }
     }
   }

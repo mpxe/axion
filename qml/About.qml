@@ -1,5 +1,5 @@
-import QtQuick 2.7
-import QtQuick.Controls 2.1
+import QtQuick 2.11
+import QtQuick.Controls 2.4
 
 
 Page {
@@ -28,7 +28,7 @@ Page {
 
       Label {
         padding: 12
-        text: "Axion (Pre-alpha)\n\nThis program uses Qt 5.8"
+        text: "Axion (Pre-alpha)\n\nThis program uses Qt 5.11"
         renderType: Text.NativeRendering
         font.family: "Segoe UI"
         font.bold: false

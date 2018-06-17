@@ -1,8 +1,8 @@
-import QtQuick 2.7
-import QtQuick.Controls 2.1
-import QtQuick.Controls.Material 2.1
-import QtQuick.Controls.Universal 2.1
-import QtQuick.Layouts 1.3
+import QtQuick 2.11
+import QtQuick.Controls 2.4
+import QtQuick.Controls.Material 2.4
+import QtQuick.Controls.Universal 2.4
+import QtQuick.Layouts 1.11
 
 
 ApplicationWindow {
@@ -28,7 +28,7 @@ ApplicationWindow {
 
       MenuBarButton {
         id: roomListButton
-        icon: "th-list"
+        iconName: "th-list"
         onClicked: {
           menuBar.prevState = menuBar.state
           menuBar.state = "roomList"
@@ -38,7 +38,7 @@ ApplicationWindow {
 
       MenuBarButton {
         id: backButton
-        icon: "arrow-left"
+        iconName: "arrow-left"
         onClicked: {
           menuBar.state = menuBar.prevState
           mainView.pop()
@@ -60,7 +60,7 @@ ApplicationWindow {
 
       MenuBarButton {
         id: searchButton
-        icon: "search"
+        iconName: "search"
         onClicked: { searchPopup.open() }
       }
 
@@ -89,7 +89,7 @@ ApplicationWindow {
 
       MenuBarButton {
         id: membersButton
-        icon: "user"
+        iconName: "user"
         onClicked: {
           menuBar.prevState = menuBar.state
           menuBar.state = "members"
@@ -99,19 +99,19 @@ ApplicationWindow {
 
       MenuBarButton {
         id: inviteButton
-        icon: "user-plus"
+        iconName: "user-plus"
         onClicked: { }
       }
 
       MenuBarButton {
         id: notificationsButton
-        icon: "envelope"
+        iconName: "envelope"
         onClicked: { }
       }
 
       MenuBarButton {
         id: settingsButton
-        icon: "wrench"
+        iconName: "wrench"
         onClicked: {
           menuBar.prevState = menuBar.state
           menuBar.state = "settings"
@@ -128,7 +128,7 @@ ApplicationWindow {
 
       MenuBarButton {
         id: optionsButton
-        icon: "cog"
+        iconName: "cog"
         onClicked: {
           menuBar.prevState = menuBar.state
           menuBar.state = "options"
@@ -138,7 +138,7 @@ ApplicationWindow {
 
       MenuBarButton {
         id: aboutButton
-        icon: "axion"
+        iconName: "axion"
         onClicked: {
           menuBar.prevState = menuBar.state
           menuBar.state = "about"
